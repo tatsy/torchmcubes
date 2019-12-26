@@ -1,4 +1,8 @@
+import os
+import sys
 import torch
+
+sys.path.append(os.path.dirname(__file__))
 import mcubes_module as mc
 
 import numpy as np
