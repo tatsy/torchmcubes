@@ -50,7 +50,7 @@ mesh.vertices = o3d.utility.Vector3dVector(verts)
 mesh.triangles = o3d.utility.Vector3iVector(faces)
 mesh.vertex_colors = o3d.utility.Vector3dVector(colrs)
 wire = o3d.geometry.LineSet.create_from_triangle_mesh(mesh)
-o3d.visualization.draw_geometries([mesh, wire], window_name='Marching cubes (CPU)')
+o3d.visualization.draw_geometries([mesh, wire], window_name='Marching cubes (CUDA)')
 ```
 
 ## Screen shot

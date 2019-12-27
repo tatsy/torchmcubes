@@ -429,7 +429,7 @@ __global__ void mcubes_cuda_kernel(
             }
 
             for (int k = 0; k < 3; k++) {
-                vertices[id * 12 + i * 3 + k] = tri[2 - k];
+                vertices[id * 12 + i * 3 + k] = tri[k];
             }
             ntris_in_cells[id] += 1;
         } else {
@@ -542,7 +542,7 @@ std::vector<torch::Tensor> mcubes_cuda(torch::Tensor vol, float threshold) {
     int offset_last;
     cudaMemcpy(&ntri_last, ntris_in_cells + (Nx * Ny * Nz - 1), sizeof(int), cudaMemcpyDeviceToHost);
     cudaMemcpy(&offset_last, offsets + (Nx * Ny * Nz - 1), sizeof(int), cudaMemcpyDeviceToHost);
-    const int ntris = ntri_last + offset_last;
+    const int ntris = max(1, ntri_last + offset_last);
 
     // Triangle list compaction
     torch::Tensor verts = torch::zeros({ntris * 3, 3},

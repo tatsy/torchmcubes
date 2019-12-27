@@ -492,7 +492,7 @@ void mcubes_method(
 
                 for (int i = 0; i < ntris; i++) {
                     for (int j = 0; j < 3; j++) {
-                        sub_vertices.push_back(tris[i].p[2 - j]);
+                        sub_vertices.push_back(tris[i].p[j]);
                     }
                 }
             }
