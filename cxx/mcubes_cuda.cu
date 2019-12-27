@@ -1,4 +1,6 @@
 #include <torch/extension.h>
+#include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -6,6 +8,7 @@
 #include <vector>
 
 #include "macros.h"
+#include "cuda_utils.h"
 #include "pscan.h"
 #include "helper_math.h"
 
@@ -328,14 +331,14 @@ __device__ float3 vertexInterp(float isolevel, float3 p1, float3 p2, float valp1
 }
 
 __global__ void mcubes_cuda_kernel(
-    const torch::PackedTensorAccessor<float, 3, torch::RestrictPtrTraits, size_t> vol,
+    const torch::PackedTensorAccessor32<float, 3, torch::RestrictPtrTraits> vol,
     float3 *vertices,
     int *ntris_in_cells,
     int3 nGrids,
     float threshold,
-    const torch::PackedTensorAccessor<int, 1, torch::RestrictPtrTraits, size_t> edgeTable,
-    const torch::PackedTensorAccessor<int, 2, torch::RestrictPtrTraits, size_t> triTable) {
-    
+    const torch::PackedTensorAccessor32<int, 1, torch::RestrictPtrTraits> edgeTable,
+    const torch::PackedTensorAccessor32<int, 2, torch::RestrictPtrTraits> triTable) {
+
     const int ix = blockIdx.x * blockDim.x + threadIdx.x;
     const int iy = blockIdx.y * blockDim.y + threadIdx.y;
     const int iz = blockIdx.z * blockDim.z + threadIdx.z;
@@ -445,15 +448,15 @@ __global__ void compaction(
     int *ntris,
     int *offsets,
     int3 nGrids,
-    torch::PackedTensorAccessor<float, 2, torch::RestrictPtrTraits, size_t> verts,
-    torch::PackedTensorAccessor<int, 2, torch::RestrictPtrTraits, size_t> faces) {
+    torch::PackedTensorAccessor32<float, 2, torch::RestrictPtrTraits> verts,
+    torch::PackedTensorAccessor32<int, 2, torch::RestrictPtrTraits> faces) {
 
     const int ix = blockIdx.x * blockDim.x + threadIdx.x;
     const int iy = blockIdx.y * blockDim.y + threadIdx.y;
     const int iz = blockIdx.z * blockDim.z + threadIdx.z;
     const int index = (iz * nGrids.y + iy) * nGrids.x + ix;
     const int size = nGrids.x * nGrids.y * nGrids.z;
-    
+
     if (index < size) {
         const int start = offsets[index];
         const int n = ntris[index];
@@ -472,10 +475,12 @@ std::vector<torch::Tensor> mcubes_cuda(torch::Tensor vol, float threshold) {
     // Check input tensor
     CHECK_CUDA(vol);
     CHECK_CONTIGUOUS(vol);
+    CHECK_IS_FLOAT(vol);
     CHECK_N_DIM(vol, 3);    
 
     // Transfer table data to device
-    torch::Tensor edgeTableTensor = torch::zeros({256}, at::kInt);
+    torch::Tensor edgeTableTensor = torch::zeros({256},
+        torch::TensorOptions().dtype(at::kInt).device(at::kCPU));
     {
         auto acsr = edgeTableTensor.accessor<int, 1>();
         for (int i = 0; i < 256; i++) {
@@ -484,7 +489,8 @@ std::vector<torch::Tensor> mcubes_cuda(torch::Tensor vol, float threshold) {
     }
     torch::Tensor edgeTableTensorCuda = edgeTableTensor.to(vol.device());
 
-    torch::Tensor triTableTensor = torch::zeros({256, 16}, at::kInt);
+    torch::Tensor triTableTensor = torch::zeros({256, 16},
+        torch::TensorOptions().dtype(at::kInt).device(at::kCPU));
     {
         auto acsr = triTableTensor.accessor<int, 2>();
         for (int i = 0; i < 256; i++) {
@@ -509,25 +515,31 @@ std::vector<torch::Tensor> mcubes_cuda(torch::Tensor vol, float threshold) {
     const dim3 threads = { BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE };
     const int3 nGrids = make_int3(Nx, Ny, Nz);
 
+    const int deviceID = vol.device().index();
+    const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
     // Allocate vertex buffer
+    cudaSetDevice(deviceID);
     float3 *vertices;
     cudaMalloc((void**)&vertices, sizeof(float3) * 12 * Nx * Ny * Nz);
     cudaMemset((void*)vertices, 0, sizeof(float3) * 12 * Nx * Ny * Nz);
 
+    cudaSetDevice(deviceID);
     int *ntris_in_cells;
     cudaMalloc((void**)&ntris_in_cells, sizeof(int) * Nx * Ny * Nz);
     cudaMemset((void*)ntris_in_cells, 0, sizeof(int) * Nx * Ny * Nz);
- 
+
     // Kernel call
-    mcubes_cuda_kernel<<<blocks, threads>>>(
-        vol.packed_accessor<float, 3, torch::RestrictPtrTraits, size_t>(),
+    mcubes_cuda_kernel<<<blocks, threads, 0, stream>>>(
+        vol.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
         vertices,
         ntris_in_cells,
         nGrids,
         threshold,
-        edgeTableTensorCuda.packed_accessor<int, 1, torch::RestrictPtrTraits, size_t>(),
-        triTableTensorCuda.packed_accessor<int, 2, torch::RestrictPtrTraits, size_t>()
+        edgeTableTensorCuda.packed_accessor32<int, 1, torch::RestrictPtrTraits>(),
+        triTableTensorCuda.packed_accessor32<int, 2, torch::RestrictPtrTraits>()
     );
+    cudaSetDevice(deviceID);
     cudaDeviceSynchronize();
 
     // Compute number of triangles
@@ -535,9 +547,11 @@ std::vector<torch::Tensor> mcubes_cuda(torch::Tensor vol, float threshold) {
     cudaMalloc((void**)&offsets, sizeof(int) * Nx * Ny * Nz);
     cudaMemset((void*)offsets, 0, sizeof(int) * Nx * Ny * Nz);
 
-    prescan(ntris_in_cells, offsets, Nx * Ny * Nz);
+    prescan(ntris_in_cells, offsets, Nx * Ny * Nz, deviceID, stream);
+    cudaSetDevice(deviceID);
     cudaDeviceSynchronize();
 
+    cudaSetDevice(deviceID);
     int ntri_last;
     int offset_last;
     cudaMemcpy(&ntri_last, ntris_in_cells + (Nx * Ny * Nz - 1), sizeof(int), cudaMemcpyDeviceToHost);
@@ -550,19 +564,23 @@ std::vector<torch::Tensor> mcubes_cuda(torch::Tensor vol, float threshold) {
     torch::Tensor faces = torch::zeros({ntris, 3},
         torch::TensorOptions().dtype(torch::kInt32).device(vol.device()));
 
-    compaction<<<blocks, threads>>>(
+    compaction<<<blocks, threads, 0, stream>>>(
         vertices,
         ntris_in_cells,
         offsets,
         nGrids,
-        verts.packed_accessor<float, 2, torch::RestrictPtrTraits, size_t>(),
-        faces.packed_accessor<int, 2, torch::RestrictPtrTraits, size_t>()
+        verts.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
+        faces.packed_accessor32<int, 2, torch::RestrictPtrTraits>()
     );
+    cudaSetDevice(deviceID);
     cudaDeviceSynchronize();
 
+    cudaSetDevice(deviceID);
     cudaFree(vertices);
     cudaFree(ntris_in_cells);
     cudaFree(offsets);
-    
+
+    CUDA_CHECK_ERRORS();
+
     return { verts, faces };
 }

@@ -1,18 +1,21 @@
 #include <torch/extension.h>
+#include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
 
 #include <cuda_runtime.h>
 
 #include "macros.h"
+#include "cuda_utils.h"
 
 __global__ void grid_interp_cuda_kernel(
-    const torch::PackedTensorAccessor<float, 4, torch::RestrictPtrTraits, size_t> vol,
-    const torch::PackedTensorAccessor<float, 2, torch::RestrictPtrTraits, size_t> points,
-    torch::PackedTensorAccessor<float, 2, torch::RestrictPtrTraits, size_t> output,
+    const torch::PackedTensorAccessor32<float, 4, torch::RestrictPtrTraits> vol,
+    const torch::PackedTensorAccessor32<float, 2, torch::RestrictPtrTraits> points,
+    torch::PackedTensorAccessor32<float, 2, torch::RestrictPtrTraits> output,
     int channels, int3 nGrids, size_t size) {
-    
+
     const int tx = blockIdx.x * blockDim.x + threadIdx.x;
     const int ty = blockIdx.y * blockDim.y + threadIdx.y;
-    const int tz = blockIdx.z * blockDim.z + threadIdx.z;    
+    const int tz = blockIdx.z * blockDim.z + threadIdx.z;
     const int index = (tz * blockDim.y * gridDim.y + ty) * blockDim.x * gridDim.x + tx;
     if (index >= size) {
         return;
@@ -41,23 +44,27 @@ __global__ void grid_interp_cuda_kernel(
         const float v01 = (1.0 - fx) * vol[c][z0][y1][x0] + fx * vol[c][z0][y1][x1];
         const float v10 = (1.0 - fx) * vol[c][z1][y0][x0] + fx * vol[c][z1][y0][x1];
         const float v11 = (1.0 - fx) * vol[c][z1][y1][x0] + fx * vol[c][z1][y1][x1];
-        
+
         const float v0 = (1.0 - fy) * v00 + fy * v01;
         const float v1 = (1.0 - fy) * v10 + fy * v11;
 
         output[index][c] = (1.0 - fz) * v0 + fz * v1;
-    }         
+    }
 }
 
 torch::Tensor grid_interp_cuda(torch::Tensor vol, torch::Tensor points) {
+    // Check input tensors
     CHECK_CUDA(vol);
     CHECK_CONTIGUOUS(vol);
+    CHECK_IS_FLOAT(vol);
     CHECK_N_DIM(vol, 4);
 
     CHECK_CUDA(points);
     CHECK_CONTIGUOUS(points);
+    CHECK_IS_FLOAT(vol);
     CHECK_N_DIM(points, 2);
 
+    // Size parameters
     const int Nx = vol.size(3);
     const int Ny = vol.size(2);
     const int Nz = vol.size(1);
@@ -67,9 +74,9 @@ torch::Tensor grid_interp_cuda(torch::Tensor vol, torch::Tensor points) {
     torch::Tensor output = torch::zeros({Np, C},
         torch::TensorOptions().dtype(torch::kFloat32).device(vol.device()));
 
-    auto vol_ascr = vol.packed_accessor<float, 4, torch::RestrictPtrTraits, size_t>();
-    auto pts_ascr = points.packed_accessor<float, 2, torch::RestrictPtrTraits, size_t>();
-    auto out_ascr = output.packed_accessor<float, 2, torch::RestrictPtrTraits, size_t>();    
+    auto vol_ascr = vol.packed_accessor32<float, 4, torch::RestrictPtrTraits>();
+    auto pts_ascr = points.packed_accessor32<float, 2, torch::RestrictPtrTraits>();
+    auto out_ascr = output.packed_accessor32<float, 2, torch::RestrictPtrTraits>();
 
     const uint32_t MAX_THREADS_AXIS = 128;
     const uint32_t MAX_THREADS_AXIS2 = MAX_THREADS_AXIS * MAX_THREADS_AXIS;
@@ -82,9 +89,14 @@ torch::Tensor grid_interp_cuda(torch::Tensor vol, torch::Tensor points) {
     const uint32_t gridy = (blocky + BLOCK_SIZE - 1) / BLOCK_SIZE;
     const uint32_t gridz = (blockz + BLOCK_SIZE - 1) / BLOCK_SIZE;
     const int3 nGrids = make_int3(Nx, Ny, Nz);
+
     const dim3 blocks = { gridx, gridy, gridz };
     const dim3 threads = { BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE };
-    grid_interp_cuda_kernel<<<blocks, threads>>>(vol_ascr, pts_ascr, out_ascr, C, nGrids, Np);
+    const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
+    grid_interp_cuda_kernel<<<blocks, threads, 0, stream>>>(vol_ascr, pts_ascr, out_ascr, C, nGrids, Np);
+
+    CUDA_CHECK_ERRORS();
 
     return output;
 }
