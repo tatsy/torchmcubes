@@ -6,7 +6,6 @@
 #define _MACROS_H_
 
 #include <torch/extension.h>
-#include <ATen/cuda/CUDAContext.h>
 
 #include <cstdio>
 
