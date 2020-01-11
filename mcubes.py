@@ -5,9 +5,6 @@ import torch
 sys.path.append(os.path.dirname(__file__))
 import mcubes_module as mc
 
-import numpy as np
-import open3d as o3d
-
 def marching_cubes(vol, thresh):
     """
     vol: 3D torch tensor
@@ -38,6 +35,10 @@ def grid_interp(vol, points):
 
 
 if __name__ == '__main__':
+    # Modules needed for testing
+    import numpy as np
+    import open3d as o3d
+
     # Grid data
     N = 128
     x, y, z = np.mgrid[:N, :N, :N]
