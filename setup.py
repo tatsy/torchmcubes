@@ -14,7 +14,8 @@ try:
                 'cxx/mcubes_cuda.cu',
                 'cxx/grid_interp_cpu.cpp',
                 'cxx/grid_interp_cuda.cu'
-            ])
+            ],
+            extra_compile_args=['-DWITH_CUDA'])
         ],
         cmdclass={
             'build_ext': BuildExtension
