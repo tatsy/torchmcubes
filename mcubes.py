@@ -1,9 +1,11 @@
 import os
 import sys
+
 import torch
 
 sys.path.append(os.path.dirname(__file__))
 import mcubes_module as mc
+
 
 def marching_cubes(vol, thresh):
     """
@@ -40,15 +42,15 @@ if __name__ == '__main__':
     import open3d as o3d
 
     # Grid data
-    N = 128
+    N = 17
     x, y, z = np.mgrid[:N, :N, :N]
     x = (x / N).astype('float32')
     y = (y / N).astype('float32')
     z = (z / N).astype('float32')
 
     # Implicit function (metaball)
-    f0 = (x - 0.35) ** 2 + (y - 0.35) ** 2 + (z - 0.35) ** 2
-    f1 = (x - 0.65) ** 2 + (y - 0.65) ** 2 + (z - 0.65) ** 2
+    f0 = (x - 0.35)**2 + (y - 0.35)**2 + (z - 0.35)**2
+    f1 = (x - 0.65)**2 + (y - 0.65)**2 + (z - 0.65)**2
     u = 1.0 / f0 + 1.0 / f1
     rgb = np.stack((x, y, z), axis=-1)
     rgb = np.transpose(rgb, axes=(3, 2, 1, 0)).copy()

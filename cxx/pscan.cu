@@ -1,5 +1,9 @@
 #include "pscan.h"
 
+#include <torch/extension.h>
+#include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
+
 #include <iostream>
 
 #include <cuda_runtime.h>
@@ -118,50 +122,47 @@ __global__ void add(int *output, int length, int *n1, int *n2) {
     output[blockOffset + threadID] += n1[blockID] + n2[blockID];
 }
 
-void prescan_small(int *d_in, int *d_out, int n, int deviceID = 0, cudaStream_t stream = 0) {
+void prescan_small(int *d_in, int *d_out, int n, int dev_id = 0, cudaStream_t stream = 0) {
     const int pow2 = nextPowerOfTwo(n);
     prescan_small_kernel<<<1, (n + 1) / 2, 2 * pow2 * sizeof(int), stream>>>(d_in, d_out, n, pow2);
 
     CUDA_CHECK_ERRORS();
 }
 
-void prescan_large(int *d_in, int *d_out, int n, int deviceID = 0, cudaStream_t stream = 0) {
-    const int blocks = n / ELEMENTS_PER_BLOCK;
+void prescan_large(int *d_in, int *d_out, int n, int dev_id = 0, cudaStream_t stream = 0) {
+    const int blocks = (n + ELEMENTS_PER_BLOCK - 1) / ELEMENTS_PER_BLOCK;
     const int sharedSize = ELEMENTS_PER_BLOCK * sizeof(int);
 
-    cudaSetDevice(deviceID);
-    int *d_sums, *d_incr;
-    cudaMalloc((void**)&d_sums, blocks * sizeof(int));
-    cudaMalloc((void**)&d_incr, blocks * sizeof(int));
+    torch::Tensor d_sums = torch::zeros({ blocks },
+        torch::TensorOptions().dtype(torch::kInt32).device(torch::kCUDA, dev_id));
+    torch::Tensor d_incr = torch::zeros({ blocks },
+        torch::TensorOptions().dtype(torch::kInt32).device(torch::kCUDA, dev_id));
 
-    prescan_large_kernel<<<blocks, THREADS_PER_BLOCK, 2 * sharedSize, stream>>>(d_in, d_out, ELEMENTS_PER_BLOCK, d_sums);
+    prescan_large_kernel<<<blocks, THREADS_PER_BLOCK, 2 * sharedSize, stream>>>(
+        d_in, d_out, ELEMENTS_PER_BLOCK, (int*)d_sums.data_ptr());
 
     const int sumThreadsNeeded = (blocks + 1) / 2;
     if (sumThreadsNeeded > THREADS_PER_BLOCK) {
-        prescan_large(d_sums, d_incr, blocks, deviceID, stream);
+        prescan_large((int*)d_sums.data_ptr(), (int*)d_incr.data_ptr(), blocks, dev_id, stream);
     } else {
-        prescan_small(d_sums, d_incr, blocks, deviceID, stream);
+        prescan_small((int*)d_sums.data_ptr(), (int*)d_incr.data_ptr(), blocks, dev_id, stream);
     }
 
-    add<<<blocks, ELEMENTS_PER_BLOCK, 0, stream>>>(d_out, ELEMENTS_PER_BLOCK, d_incr);
-
-    cudaSetDevice(deviceID);
-    cudaFree(d_sums);
-    cudaFree(d_incr);
+    add<<<blocks, ELEMENTS_PER_BLOCK, 0, stream>>>(d_out, ELEMENTS_PER_BLOCK, (int*)d_incr.data_ptr());
 
     CUDA_CHECK_ERRORS();
 }
 
-void prescan(int *d_in, int *d_out, int size, int deviceID, cudaStream_t stream) {
+void prescan(int *d_in, int *d_out, int size, int dev_id, cudaStream_t stream) {
     const size_t residue = size % ELEMENTS_PER_BLOCK;
     if (size < ELEMENTS_PER_BLOCK) {
-        prescan_small(d_in, d_out, size, deviceID, stream);
+        prescan_small(d_in, d_out, size, dev_id, stream);
     } else if (residue == 0) {
-        prescan_large(d_in, d_out, size, deviceID, stream);
+        prescan_large(d_in, d_out, size, dev_id, stream);
     } else {
         const size_t tail = size - residue;
-        prescan_large(d_in, d_out, tail, deviceID, stream);
-        prescan_small(&d_in[tail], &d_out[tail], residue, deviceID, stream);
+        prescan_large(d_in, d_out, tail, dev_id, stream);
+        prescan_small(&d_in[tail], &d_out[tail], residue, dev_id, stream);
         add<<<1, residue, 0, stream>>>(&d_out[tail], residue, &d_in[tail - 1], &d_out[tail - 1]);
     }
 

@@ -1,4 +1,5 @@
 build/*
+.vscode/*
 
 __pycache__
 *.pyd

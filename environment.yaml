@@ -1,11 +1,11 @@
 name: mcubes
 channels:
   - defaults
-  - conda-forge
+  - main
   - pytorch
   - open3d-admin
 dependencies:
-  - python=3.7
+  - python
   - numpy
   - pytorch::pytorch=1.7.0
   - cudatoolkit=11.0

@@ -502,9 +502,9 @@ std::vector<torch::Tensor> mcubes_cuda(torch::Tensor vol, float threshold) {
     torch::Tensor triTableTensorCuda = triTableTensor.to(vol.device());
 
     // Size parameters
-    const size_t Nx = vol.size(2);
-    const size_t Ny = vol.size(1);
-    const size_t Nz = vol.size(0);
+    const int64_t Nx = vol.size(2);
+    const int64_t Ny = vol.size(1);
+    const int64_t Nz = vol.size(0);
 
     const uint32_t BLOCK_SIZE = 8;
     const uint32_t gridx = (Nx + BLOCK_SIZE - 1) / BLOCK_SIZE;
@@ -515,47 +515,41 @@ std::vector<torch::Tensor> mcubes_cuda(torch::Tensor vol, float threshold) {
     const dim3 threads = { BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE };
     const int3 nGrids = make_int3(Nx, Ny, Nz);
 
-    const int deviceID = vol.device().index();
+    const int dev_id = vol.device().index();
     const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
     // Allocate vertex buffer
-    cudaSetDevice(deviceID);
-    float3 *vertices;
-    cudaMalloc((void**)&vertices, sizeof(float3) * 12 * Nx * Ny * Nz);
-    cudaMemset((void*)vertices, 0, sizeof(float3) * 12 * Nx * Ny * Nz);
-
-    cudaSetDevice(deviceID);
-    int *ntris_in_cells;
-    cudaMalloc((void**)&ntris_in_cells, sizeof(int) * Nx * Ny * Nz);
-    cudaMemset((void*)ntris_in_cells, 0, sizeof(int) * Nx * Ny * Nz);
+    torch::Tensor vert_buffer = torch::zeros({12 * Nx * Ny * Nz * 3},
+        torch::TensorOptions().dtype(torch::kFloat32).device(vol.device()));
+    torch::Tensor ntris_in_cells = torch::zeros({12 * Nx * Ny * Nz},
+        torch::TensorOptions().dtype(torch::kInt32).device(vol.device()));
+    torch::Tensor offsets = torch::zeros({Nx * Ny * Nz},
+        torch::TensorOptions().dtype(torch::kInt32).device(vol.device()));
 
     // Kernel call
     mcubes_cuda_kernel<<<blocks, threads, 0, stream>>>(
         vol.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        vertices,
-        ntris_in_cells,
+        (float3*)vert_buffer.data_ptr(),
+        (int*)ntris_in_cells.data_ptr(),
         nGrids,
         threshold,
         edgeTableTensorCuda.packed_accessor32<int, 1, torch::RestrictPtrTraits>(),
         triTableTensorCuda.packed_accessor32<int, 2, torch::RestrictPtrTraits>()
     );
-    cudaSetDevice(deviceID);
     cudaDeviceSynchronize();
 
     // Compute number of triangles
-    int *offsets;
-    cudaMalloc((void**)&offsets, sizeof(int) * Nx * Ny * Nz);
-    cudaMemset((void*)offsets, 0, sizeof(int) * Nx * Ny * Nz);
-
-    prescan(ntris_in_cells, offsets, Nx * Ny * Nz, deviceID, stream);
-    cudaSetDevice(deviceID);
+    prescan((int*)ntris_in_cells.data_ptr(),
+            (int*)offsets.data_ptr(),
+            Nx * Ny * Nz, dev_id, stream);
+    cudaSetDevice(dev_id);
     cudaDeviceSynchronize();
 
-    cudaSetDevice(deviceID);
-    int ntri_last;
-    int offset_last;
-    cudaMemcpy(&ntri_last, ntris_in_cells + (Nx * Ny * Nz - 1), sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&offset_last, offsets + (Nx * Ny * Nz - 1), sizeof(int), cudaMemcpyDeviceToHost);
+    cudaSetDevice(dev_id);
+    const int ntri_last = ntris_in_cells[Nx * Ny * Nz - 1].cpu().item<int>();
+    const int offset_last = offsets[Nx * Ny * Nz - 1].cpu().item<int>();
+    // cudaMemcpy(&ntri_last, ntris_in_cells + (Nx * Ny * Nz - 1), sizeof(int), cudaMemcpyDeviceToHost);
+    // cudaMemcpy(&offset_last, offsets + (Nx * Ny * Nz - 1), sizeof(int), cudaMemcpyDeviceToHost);
     const int ntris = max(1, ntri_last + offset_last);
 
     // Triangle list compaction
@@ -565,20 +559,14 @@ std::vector<torch::Tensor> mcubes_cuda(torch::Tensor vol, float threshold) {
         torch::TensorOptions().dtype(torch::kInt32).device(vol.device()));
 
     compaction<<<blocks, threads, 0, stream>>>(
-        vertices,
-        ntris_in_cells,
-        offsets,
+        (float3*)vert_buffer.data_ptr(),
+        (int*)ntris_in_cells.data_ptr(),
+        (int*)offsets.data_ptr(),
         nGrids,
         verts.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
         faces.packed_accessor32<int, 2, torch::RestrictPtrTraits>()
     );
-    cudaSetDevice(deviceID);
     cudaDeviceSynchronize();
-
-    cudaSetDevice(deviceID);
-    cudaFree(vertices);
-    cudaFree(ntris_in_cells);
-    cudaFree(offsets);
 
     CUDA_CHECK_ERRORS();
 

@@ -2,9 +2,6 @@ Marching cubes in PyTorch
 ===
 
 > Marching cubes for PyTorch environment. Backend is implemented with C++ and CUDA.
-
-Currently, the CUDA code **only works for a grid cell with the power-of-two size** (e.g., 32, 64, 128, ...). If you wish to use the code with non-power-of-two size, please **pad with zeros to make the size to be power-of-two** before using it. See [#2](https://github.com/tatsy/mcubes_pytorch/issues/2) for details.
-
 ## Build
 
 ```shell
