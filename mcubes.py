@@ -42,7 +42,7 @@ if __name__ == '__main__':
     import open3d as o3d
 
     # Grid data
-    N = 17
+    N = 128
     x, y, z = np.mgrid[:N, :N, :N]
     x = (x / N).astype('float32')
     y = (y / N).astype('float32')
