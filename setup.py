@@ -1,31 +1,56 @@
-# -*- coding: utf-8 -*-
+
 from setuptools import setup
-
-packages = \
-['torchmcubes']
-
-package_data = \
-{'': ['*']}
-
-install_requires = \
-['torch>=1.4.1']
+from torch.utils.cpp_extension import BuildExtension
 
 setup_kwargs = {
     'name': 'torchmcubes',
     'version': '0.1.0',
-    'description': 'PyTorch implementation of marching cubes',
-    'long_description': None,
-    'author': 'tatsy',
+    'description': 'torchmcubes: marching cubes for PyTorch',
+    'license': 'MIT',
+    'author': 'Tatsuya Yatagawa',
     'author_email': 'tatsy.mail@gmail.com',
-    'maintainer': None,
-    'maintainer_email': None,
-    'url': None,
-    'packages': packages,
-    'package_data': package_data,
-    'install_requires': install_requires,
-    'python_requires': '>=3.7',
+    'classifiers': [
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9'
+    ]
 }
-from build import *
-build(setup_kwargs)
 
-setup(**setup_kwargs)
+
+try:
+    from torch.utils.cpp_extension import CUDAExtension
+
+    setup_kwargs.update({
+        'ext_modules': [
+              CUDAExtension(
+                  'mcubes_module',
+                  [
+                      'cxx/pscan.cu',
+                      'cxx/mcubes.cpp',
+                      'cxx/mcubes_cpu.cpp',
+                      'cxx/mcubes_cuda.cu',
+                      'cxx/grid_interp_cpu.cpp',
+                      'cxx/grid_interp_cuda.cu',
+                  ],
+                  extra_compile_args=['-DWITH_CUDA'],
+              )
+          ],
+          'cmdclass': {'build_ext': BuildExtension}})
+    setup(**setup_kwargs)
+
+except:
+    print('CUDA environment was not successfully loaded!')
+    print('Build only CPU module!')
+
+    from torch.utils.cpp_extension import CppExtension
+
+    setup_kwargs.update({
+          'ext_modules': [
+              CppExtension('mcubes_module', [
+                  'cxx/mcubes.cpp',
+                  'cxx/mcubes_cpu.cpp',
+                  'cxx/grid_interp_cpu.cpp',
+              ])
+          ],
+          'cmdclass': {'build_ext': BuildExtension}})
+    setup(**setup_kwargs)

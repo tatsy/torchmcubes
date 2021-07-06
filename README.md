@@ -1,10 +1,18 @@
-Marching cubes in PyTorch
+torchmcubes: marching cubes for PyTorch
 ===
 
 > Marching cubes for PyTorch environment. Backend is implemented with C++ and CUDA.
-## Build
+
+## Install
 
 ```shell
+$ pip install --no-use-pep517 git+https://github.com/tatsy/torchmcubes.git
+```
+
+#### Build only
+
+```shell
+# After cloning this repo...
 $ python setup.py build_ext -i
 ```
 
@@ -17,7 +25,7 @@ import numpy as np
 import open3d as o3d
 
 import torch
-from mcubes import marching_cubes, grid_interp
+from torchmcubes import marching_cubes, grid_interp
 
 # Grid data
 N = 128
@@ -58,4 +66,4 @@ o3d.visualization.draw_geometries([mesh, wire], window_name='Marching cubes (CUD
 
 ## Copyright
 
-MIT License 2019 (c) Tatsuya Yatagawa
+MIT License 2019-2021 (c) Tatsuya Yatagawa

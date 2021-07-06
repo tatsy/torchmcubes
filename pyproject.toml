@@ -1,23 +1,3 @@
 [tool.isort]
 length_sort = true
 line_length = 120
-
-[tool.poetry]
-name = "torchmcubes"
-version = "0.1.0"
-description = "PyTorch implementation of marching cubes"
-authors = ["tatsy <tatsy.mail@gmail.com>"]
-license = "MIT"
-
-[tool.poetry.dependencies]
-python = ">=3.7"
-torch = ">=1.4.1"
-
-[tool.poetry.dev-dependencies]
-
-[tool.poetry.build]
-script = "build.py"
-
-[build-system]
-requires = ["poetry-core>=1.0.0", "setuptools>=42.0.0", "torch>=1.4.1"]
-build-backend = "poetry.core.masonry.api"
