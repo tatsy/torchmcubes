@@ -6,10 +6,6 @@ from torchmcubes import grid_interp, marching_cubes
 
 
 def main():
-    # Modules needed for testing
-    import numpy as np
-    import open3d as o3d
-
     # Grid data
     N = 128
     x, y, z = np.mgrid[:N, :N, :N]

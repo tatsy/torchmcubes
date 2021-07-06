@@ -6,7 +6,7 @@ torchmcubes: marching cubes for PyTorch
 ## Install
 
 ```shell
-$ pip install --no-use-pep517 git+https://github.com/tatsy/torchmcubes.git
+$ pip install git+https://github.com/tatsy/torchmcubes.git
 ```
 
 #### Build only
