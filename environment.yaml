@@ -7,6 +7,13 @@ channels:
 dependencies:
   - python
   - numpy
+  - pandas
   - pytorch::pytorch=1.7.0
   - cudatoolkit=11.0
   - open3d-admin::open3d
+  - scikit-learn
+  - pip
+  - pip:
+    - pyyaml
+    - addict
+    - plyfile

@@ -1,37 +1,31 @@
+# -*- coding: utf-8 -*-
 from setuptools import setup
-from torch.utils.cpp_extension import BuildExtension
 
-try:
-    from torch.utils.cpp_extension import CUDAExtension
+packages = \
+['torchmcubes']
 
-    setup(name='mcubes_module',
-          ext_modules=[
-              CUDAExtension(
-                  'mcubes_module',
-                  [
-                      'cxx/pscan.cu',
-                      'cxx/mcubes.cpp',
-                      'cxx/mcubes_cpu.cpp',
-                      'cxx/mcubes_cuda.cu',
-                      'cxx/grid_interp_cpu.cpp',
-                      'cxx/grid_interp_cuda.cu',
-                  ],
-                  extra_compile_args=['-DWITH_CUDA'],
-              )
-          ],
-          cmdclass={'build_ext': BuildExtension})
-except:
-    print('CUDA environment was not successfully loaded!')
-    print('Build only CPU module!')
+package_data = \
+{'': ['*']}
 
-    from torch.utils.cpp_extension import CppExtension
+install_requires = \
+['torch>=1.4.1']
 
-    setup(name='mcubes_module',
-          ext_modules=[
-              CppExtension('mcubes_module', [
-                  'cxx/mcubes.cpp',
-                  'cxx/mcubes_cpu.cpp',
-                  'cxx/grid_interp_cpu.cpp',
-              ])
-          ],
-          cmdclass={'build_ext': BuildExtension})
+setup_kwargs = {
+    'name': 'torchmcubes',
+    'version': '0.1.0',
+    'description': 'PyTorch implementation of marching cubes',
+    'long_description': None,
+    'author': 'tatsy',
+    'author_email': 'tatsy.mail@gmail.com',
+    'maintainer': None,
+    'maintainer_email': None,
+    'url': None,
+    'packages': packages,
+    'package_data': package_data,
+    'install_requires': install_requires,
+    'python_requires': '>=3.7',
+}
+from build import *
+build(setup_kwargs)
+
+setup(**setup_kwargs)
