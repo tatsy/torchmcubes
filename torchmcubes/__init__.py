@@ -1,5 +1,5 @@
 import torch
-import mcubes_module as mc
+import torchmcubes_module as mc
 
 
 def marching_cubes(vol, thresh):

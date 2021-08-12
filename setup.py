@@ -8,6 +8,9 @@ setup_kwargs = {
     'license': 'MIT',
     'author': 'Tatsuya Yatagawa',
     'author_email': 'tatsy.mail@gmail.com',
+    'packages': [
+        'torchmcubes'
+    ],
     'classifiers': [
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
@@ -21,7 +24,7 @@ try:
     setup_kwargs.update({
         'ext_modules': [
             CUDAExtension(
-                'mcubes_module',
+                'torchmcubes_module',
                 [
                     'cxx/pscan.cu',
                     'cxx/mcubes.cpp',
@@ -47,7 +50,7 @@ except:
 
     setup_kwargs.update({
         'ext_modules': [
-            CppExtension('mcubes_module', [
+            CppExtension('torchmcubes_module', [
                 'cxx/mcubes.cpp',
                 'cxx/mcubes_cpu.cpp',
                 'cxx/grid_interp_cpu.cpp',
