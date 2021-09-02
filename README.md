@@ -6,14 +6,14 @@ torchmcubes: marching cubes for PyTorch
 ## Install
 
 ```shell
-$ pip install git+https://github.com/tatsy/torchmcubes.git
+pip install git+https://github.com/tatsy/torchmcubes.git
 ```
 
 #### Build only
 
 ```shell
 # After cloning this repo...
-$ python setup.py build_ext -i
+python setup.py build_ext -i
 ```
 
 ## Usage
