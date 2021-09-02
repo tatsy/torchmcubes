@@ -332,8 +332,8 @@ __device__ float3 vertexInterp(float isolevel, float3 p1, float3 p2, float valp1
 
 __global__ void mcubes_cuda_kernel(
     const torch::PackedTensorAccessor32<float, 3, torch::RestrictPtrTraits> vol,
-    float3 *vertices,
-    int *ntris_in_cells,
+    torch::PackedTensorAccessor32<float, 5, torch::RestrictPtrTraits> vertices,
+    torch::PackedTensorAccessor32<int, 3, torch::RestrictPtrTraits> ntris_in_cells,
     int3 nGrids,
     float threshold,
     const torch::PackedTensorAccessor32<int, 1, torch::RestrictPtrTraits> edgeTable,
@@ -422,31 +422,23 @@ __global__ void mcubes_cuda_kernel(
         vertlist[11] = vertexInterp(threshold, p[3], p[7], val[3], val[7]);
     }
 
-    const int id = (iz * nGrids.y + iy) * nGrids.x + ix;
-
     for (int i = 0; i < 4; i++) {
         if (triTable[cubeindex][i * 3 + 0] >= 0) {
-            float3 tri[3];
             for (int k = 0; k < 3; k++) {
-                tri[k] = vertlist[triTable[cubeindex][i * 3 + k]];
+                const float3 &v = vertlist[triTable[cubeindex][i * 3 + k]];
+                vertices[iz][iy][ix][i * 3 + k][0] = v.x;
+                vertices[iz][iy][ix][i * 3 + k][1] = v.y;
+                vertices[iz][iy][ix][i * 3 + k][2] = v.z;
             }
-
-            for (int k = 0; k < 3; k++) {
-                vertices[id * 12 + i * 3 + k] = tri[k];
-            }
-            ntris_in_cells[id] += 1;
-        } else {
-            for (int k = 0; k < 3; k++) {
-                vertices[id * 12 + i * 3 + k] = make_float3(0.0, 0.0, 0.0);
-            }
+            ntris_in_cells[iz][iy][ix] += 1;
         }
     }
 }
 
 __global__ void compaction(
-    float3 *vertices,
-    int *ntris,
-    int *offsets,
+    const torch::PackedTensorAccessor32<float, 5, torch::RestrictPtrTraits> vertBuf,
+    const torch::PackedTensorAccessor32<int, 3, torch::RestrictPtrTraits> ntris,
+    const torch::PackedTensorAccessor32<int, 3, torch::RestrictPtrTraits> offsets,
     int3 nGrids,
     torch::PackedTensorAccessor32<float, 2, torch::RestrictPtrTraits> verts,
     torch::PackedTensorAccessor32<int, 2, torch::RestrictPtrTraits> faces) {
@@ -458,13 +450,13 @@ __global__ void compaction(
     const int size = nGrids.x * nGrids.y * nGrids.z;
 
     if (index < size) {
-        const int start = offsets[index];
-        const int n = ntris[index];
+        const int start = offsets[iz][iy][ix];
+        const int n = ntris[iz][iy][ix];
         for (int i = 0; i < n; i++) {
             for (int k = 0; k < 3; k++) {
-                verts[(start + i) * 3 + k][0] = vertices[index * 12 + i * 3 + k].x;
-                verts[(start + i) * 3 + k][1] = vertices[index * 12 + i * 3 + k].y;
-                verts[(start + i) * 3 + k][2] = vertices[index * 12 + i * 3 + k].z;
+                verts[(start + i) * 3 + k][0] = vertBuf[iz][iy][ix][i * 3 + k][0];
+                verts[(start + i) * 3 + k][1] = vertBuf[iz][iy][ix][i * 3 + k][1];
+                verts[(start + i) * 3 + k][2] = vertBuf[iz][iy][ix][i * 3 + k][2];
                 faces[start + i][k] = (start + i) * 3 + k;
             }
         }
@@ -515,22 +507,23 @@ std::vector<torch::Tensor> mcubes_cuda(torch::Tensor vol, float threshold) {
     const dim3 threads = { BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE };
     const int3 nGrids = make_int3(Nx, Ny, Nz);
 
-    const int dev_id = vol.device().index();
-    const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+    const int deviceId = vol.device().index();
+    const cudaStream_t stream = at::cuda::getCurrentCUDAStream(deviceId);
 
     // Allocate vertex buffer
-    torch::Tensor vert_buffer = torch::zeros({12 * Nx * Ny * Nz * 3},
-        torch::TensorOptions().dtype(torch::kFloat32).device(vol.device()));
-    torch::Tensor ntris_in_cells = torch::zeros({12 * Nx * Ny * Nz},
-        torch::TensorOptions().dtype(torch::kInt32).device(vol.device()));
-    torch::Tensor offsets = torch::zeros({Nx * Ny * Nz},
-        torch::TensorOptions().dtype(torch::kInt32).device(vol.device()));
+    torch::Tensor vert_buffer = torch::zeros({ Nz, Ny, Nx, 12, 3 },
+        torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, deviceId));
+    torch::Tensor ntris_in_cells = torch::zeros({ Nz, Ny, Nx },
+        torch::TensorOptions().dtype(torch::kInt32).device(torch::kCUDA, deviceId));
+    torch::Tensor offsets = torch::zeros({ Nz, Ny, Nx },
+        torch::TensorOptions().dtype(torch::kInt32).device(torch::kCUDA, deviceId));
 
     // Kernel call
+    cudaSetDevice(deviceId);
     mcubes_cuda_kernel<<<blocks, threads, 0, stream>>>(
         vol.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        (float3*)vert_buffer.data_ptr(),
-        (int*)ntris_in_cells.data_ptr(),
+        vert_buffer.packed_accessor32<float, 5, torch::RestrictPtrTraits>(),
+        ntris_in_cells.packed_accessor32<int, 3, torch::RestrictPtrTraits>(),
         nGrids,
         threshold,
         edgeTableTensorCuda.packed_accessor32<int, 1, torch::RestrictPtrTraits>(),
@@ -541,27 +534,24 @@ std::vector<torch::Tensor> mcubes_cuda(torch::Tensor vol, float threshold) {
     // Compute number of triangles
     prescan((int*)ntris_in_cells.data_ptr(),
             (int*)offsets.data_ptr(),
-            Nx * Ny * Nz, dev_id, stream);
-    cudaSetDevice(dev_id);
+            Nx * Ny * Nz, deviceId, stream);
     cudaDeviceSynchronize();
 
-    cudaSetDevice(dev_id);
-    const int ntri_last = ntris_in_cells[Nx * Ny * Nz - 1].cpu().item<int>();
-    const int offset_last = offsets[Nx * Ny * Nz - 1].cpu().item<int>();
-    // cudaMemcpy(&ntri_last, ntris_in_cells + (Nx * Ny * Nz - 1), sizeof(int), cudaMemcpyDeviceToHost);
-    // cudaMemcpy(&offset_last, offsets + (Nx * Ny * Nz - 1), sizeof(int), cudaMemcpyDeviceToHost);
+    const int ntri_last = ntris_in_cells[Nz -1][Ny - 1][Nx - 1].cpu().item<int>();
+    const int offset_last = offsets[Nz - 1][Ny - 1][Nx - 1].cpu().item<int>();
     const int ntris = max(1, ntri_last + offset_last);
 
     // Triangle list compaction
     torch::Tensor verts = torch::zeros({ntris * 3, 3},
-        torch::TensorOptions().dtype(torch::kFloat32).device(vol.device()));
+        torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, deviceId));
     torch::Tensor faces = torch::zeros({ntris, 3},
-        torch::TensorOptions().dtype(torch::kInt32).device(vol.device()));
+        torch::TensorOptions().dtype(torch::kInt32).device(torch::kCUDA, deviceId));
 
+    cudaSetDevice(deviceId);
     compaction<<<blocks, threads, 0, stream>>>(
-        (float3*)vert_buffer.data_ptr(),
-        (int*)ntris_in_cells.data_ptr(),
-        (int*)offsets.data_ptr(),
+        vert_buffer.packed_accessor32<float, 5, torch::RestrictPtrTraits>(),
+        ntris_in_cells.packed_accessor32<int, 3, torch::RestrictPtrTraits>(),
+        offsets.packed_accessor32<int, 3, torch::RestrictPtrTraits>(),
         nGrids,
         verts.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
         faces.packed_accessor32<int, 2, torch::RestrictPtrTraits>()

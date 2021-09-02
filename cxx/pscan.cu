@@ -1,9 +1,5 @@
 #include "pscan.h"
 
-#include <torch/extension.h>
-#include <ATen/ATen.h>
-#include <ATen/cuda/CUDAContext.h>
-
 #include <iostream>
 
 #include <cuda_runtime.h>
@@ -124,6 +120,7 @@ __global__ void add(int *output, int length, int *n1, int *n2) {
 
 void prescan_small(int *d_in, int *d_out, int n, int dev_id = 0, cudaStream_t stream = 0) {
     const int pow2 = nextPowerOfTwo(n);
+    cudaSetDevice(dev_id);
     prescan_small_kernel<<<1, (n + 1) / 2, 2 * pow2 * sizeof(int), stream>>>(d_in, d_out, n, pow2);
 
     CUDA_CHECK_ERRORS();
@@ -133,22 +130,26 @@ void prescan_large(int *d_in, int *d_out, int n, int dev_id = 0, cudaStream_t st
     const int blocks = (n + ELEMENTS_PER_BLOCK - 1) / ELEMENTS_PER_BLOCK;
     const int sharedSize = ELEMENTS_PER_BLOCK * sizeof(int);
 
-    torch::Tensor d_sums = torch::zeros({ blocks },
-        torch::TensorOptions().dtype(torch::kInt32).device(torch::kCUDA, dev_id));
-    torch::Tensor d_incr = torch::zeros({ blocks },
-        torch::TensorOptions().dtype(torch::kInt32).device(torch::kCUDA, dev_id));
+    cudaSetDevice(dev_id);
+    int *d_sums, *d_incr;
+    cudaMalloc((void **)&d_sums, blocks * sizeof(int));
+    cudaMalloc((void **)&d_incr, blocks * sizeof(int));
 
     prescan_large_kernel<<<blocks, THREADS_PER_BLOCK, 2 * sharedSize, stream>>>(
-        d_in, d_out, ELEMENTS_PER_BLOCK, (int*)d_sums.data_ptr());
+        d_in, d_out, ELEMENTS_PER_BLOCK, d_sums);
 
     const int sumThreadsNeeded = (blocks + 1) / 2;
     if (sumThreadsNeeded > THREADS_PER_BLOCK) {
-        prescan_large((int*)d_sums.data_ptr(), (int*)d_incr.data_ptr(), blocks, dev_id, stream);
+        prescan_large(d_sums, d_incr, blocks, dev_id, stream);
     } else {
-        prescan_small((int*)d_sums.data_ptr(), (int*)d_incr.data_ptr(), blocks, dev_id, stream);
+        prescan_small(d_sums, d_incr, blocks, dev_id, stream);
     }
 
-    add<<<blocks, ELEMENTS_PER_BLOCK, 0, stream>>>(d_out, ELEMENTS_PER_BLOCK, (int*)d_incr.data_ptr());
+    add<<<blocks, ELEMENTS_PER_BLOCK, 0, stream>>>(d_out, ELEMENTS_PER_BLOCK, d_incr);
+
+    cudaSetDevice(dev_id);
+    cudaFree(d_sums);
+    cudaFree(d_incr);
 
     CUDA_CHECK_ERRORS();
 }

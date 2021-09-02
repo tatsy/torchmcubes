@@ -70,13 +70,14 @@ torch::Tensor grid_interp_cuda(torch::Tensor vol, torch::Tensor points) {
     const int Nz = vol.size(1);
     const int C = vol.size(0);
     const int Np = points.size(0);
+    const int deviceId = vol.device().index();
 
     torch::Tensor output = torch::zeros({Np, C},
-        torch::TensorOptions().dtype(torch::kFloat32).device(vol.device()));
+        torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, deviceId));
 
-    auto vol_ascr = vol.packed_accessor32<float, 4, torch::RestrictPtrTraits>();
-    auto pts_ascr = points.packed_accessor32<float, 2, torch::RestrictPtrTraits>();
-    auto out_ascr = output.packed_accessor32<float, 2, torch::RestrictPtrTraits>();
+    auto volAscr = vol.packed_accessor32<float, 4, torch::RestrictPtrTraits>();
+    auto ptsAscr = points.packed_accessor32<float, 2, torch::RestrictPtrTraits>();
+    auto outAscr = output.packed_accessor32<float, 2, torch::RestrictPtrTraits>();
 
     const uint32_t MAX_THREADS_AXIS = 128;
     const uint32_t MAX_THREADS_AXIS2 = MAX_THREADS_AXIS * MAX_THREADS_AXIS;
@@ -94,7 +95,7 @@ torch::Tensor grid_interp_cuda(torch::Tensor vol, torch::Tensor points) {
     const dim3 threads = { BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE };
     const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-    grid_interp_cuda_kernel<<<blocks, threads, 0, stream>>>(vol_ascr, pts_ascr, out_ascr, C, nGrids, Np);
+    grid_interp_cuda_kernel<<<blocks, threads, 0, stream>>>(volAscr, ptsAscr, outAscr, C, nGrids, Np);
 
     CUDA_CHECK_ERRORS();
 

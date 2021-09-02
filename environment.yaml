@@ -1,7 +1,6 @@
 name: mcubes
 channels:
   - defaults
-  - main
   - pytorch
   - open3d-admin
 dependencies:
@@ -13,6 +12,9 @@ dependencies:
   - cudatoolkit=11.0
   - open3d-admin::open3d
   - scikit-learn
+  - mypy
+  - flake8
+  - yapf
   - pip
   - pip:
     - pyyaml

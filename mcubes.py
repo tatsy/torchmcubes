@@ -1,3 +1,5 @@
+import argparse
+
 import numpy as np
 import torch
 import open3d as o3d
@@ -6,12 +8,18 @@ from torchmcubes import grid_interp, marching_cubes
 
 
 def main():
+    # Arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--gpu', type=int, default=0)
+    args = parser.parse_args()
+
     # Grid data
     N = 128
-    x, y, z = np.mgrid[:N, :N, :N]
-    x = (x / N).astype('float32')
-    y = (y / N).astype('float32')
-    z = (z / N).astype('float32')
+    Nx, Ny, Nz = N - 8, N, N + 8
+    x, y, z = np.mgrid[:Nx, :Ny, :Nz]
+    x = (x / Nx).astype('float32')
+    y = (y / Ny).astype('float32')
+    z = (z / Nz).astype('float32')
 
     # Implicit function (metaball)
     f0 = (x - 0.35)**2 + (y - 0.35)**2 + (z - 0.35)**2
@@ -39,8 +47,9 @@ def main():
 
     # Test (GPU)
     if torch.cuda.is_available():
-        u = u.cuda()
-        rgb = rgb.cuda()
+        device = torch.device('cuda', args.gpu)
+        u = u.to(device)
+        rgb = rgb.to(device)
         verts, faces = marching_cubes(u, 15.0)
         colrs = grid_interp(rgb, verts)
 

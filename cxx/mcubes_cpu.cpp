@@ -471,10 +471,10 @@ void mcubes_method(
     #ifdef _OPENMP
     #pragma omp parallel for
     #endif
-    for (int z = 0; z < vol.size(2) - 1; z++) {
+    for (int z = 0; z < vol.size(0) - 1; z++) {
         std::vector<XYZ> sub_vertices;
         for (int y = 0; y < vol.size(1) - 1; y++) {
-            for (int x = 0; x < vol.size(0) - 1; x++) {
+            for (int x = 0; x < vol.size(2) - 1; x++) {
                 // Process a single cell
                 GRIDCELL cell;
                 TRIANGLE tris[16];
