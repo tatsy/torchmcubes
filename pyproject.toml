@@ -1,0 +1,64 @@
+[tool.poetry]
+name = "torchmcubes"
+version = "0.1.0"
+description = "torchmcubes: marching cubes for PyTorch"
+authors = ["Tatsuya Yatagawa <tatsy.mail@gmail.com>"]
+license = "MIT License"
+readme = "README.md"
+classifiers = [
+  'Programming Language :: Python :: 3.9',
+  'Programming Language :: Python :: 3.10',
+  'Programming Language :: Python :: 3.11',
+  'Programming Language :: Python :: 3.12',
+]
+packages = [{ include = "torchmcubes" }]
+
+[tool.poetry.build]
+script = "build_cxx.py"
+generate-setup-file = true
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+
+[tool.poetry.group.dev.dependencies]
+numpy = "^2.0.0"
+matplotlib = "^3.9.1"
+torch = ">=1.4"
+isort = "^5.13.2"
+mypy = "^1.10.1"
+black = "^24.4.2"
+yapf = "^0.40.2"
+pyproject-flake8 = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "setuptools>=57.0", "torch>=1.4"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+length_sort = true
+line_length = 120
+
+[tool.mypy]
+python_version = "3.9"
+follow_imports = "silent"
+disallow_any_generics = true
+strict_optional = true
+check_untyped_defs = true
+allow_redefinition = true
+
+[tool.flake8]
+max-line-length = 120
+ignore = "Q000,E203,W503,W504"
+
+[tool.yapf]
+based_on_style = "pep8"
+column_limit = 120
+indent_width = 4
+
+ALIGN_CLOSING_BRACKET_WITH_VISUAL_INDENT = true
+COALESCE_BRACKETS = false
+DEDENT_CLOSING_BRACKETS = false
+DISABLE_ENDING_COMMA_HEURISTIC = false
+INDENT_DICTIONARY_VALUE = false
+ALLOW_SPLIT_BEFORE_DICT_VALUE = false
+SPLIT_ARGUMENTS_WHEN_COMMA_TERMINATED = true

@@ -1,0 +1,28 @@
+BasedOnStyle: Google
+
+ColumnLimit: 120
+IndentWidth: 4
+Standard: Cpp11
+AccessModifierOffset: -4
+IndentCaseLabels: false
+
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignTrailingComments: true
+AlignOperands: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+BinPackArguments: true
+BreakConstructorInitializers: BeforeColon
+BreakConstructorInitializersBeforeComma: true
+Cpp11BracedListStyle: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+DerivePointerAlignment: false
+MaxEmptyLinesToKeep: 1
+PointerAlignment: Right
+ReflowComments: false
+SortIncludes: false
+
+UseTab: Never

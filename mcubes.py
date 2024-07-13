@@ -1,10 +1,104 @@
 import argparse
 
 import numpy as np
+import matplotlib.pyplot as plt
+
+# isort: off
+# import open3d as o3d
 import torch
-import open3d as o3d
+# isort: on
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.collections import PolyCollection
 
 from torchmcubes import grid_interp, marching_cubes
+
+
+def frustum(left, right, bottom, top, znear, zfar):
+    M = np.zeros((4, 4), dtype=np.float32)
+    M[0, 0] = +2.0 * znear / (right - left)
+    M[1, 1] = +2.0 * znear / (top - bottom)
+    M[2, 2] = -(zfar + znear) / (zfar - znear)
+    M[0, 2] = (right + left) / (right - left)
+    M[2, 1] = (top + bottom) / (top - bottom)
+    M[2, 3] = -2.0 * znear * zfar / (zfar - znear)
+    M[3, 2] = -1.0
+    return M
+
+
+def perspective(fovy, aspect, znear, zfar):
+    h = np.tan(0.5 * np.radians(fovy)) * znear
+    w = h * aspect
+    return frustum(-w, w, -h, h, znear, zfar)
+
+
+def translate(x, y, z):
+    return np.array(
+        [
+            [1, 0, 0, x],
+            [0, 1, 0, y],
+            [0, 0, 1, z],
+            [0, 0, 0, 1],
+        ],
+        dtype=float,
+    )
+
+
+def xrotate(theta):
+    t = np.pi * theta / 180
+    c, s = np.cos(t), np.sin(t)
+    return np.array([
+        [1, 0, 0, 0],
+        [0, c, -s, 0],
+        [0, s, c, 0],
+        [0, 0, 0, 1],
+    ], dtype=float)
+
+
+def yrotate(theta):
+    t = np.pi * theta / 180
+    c, s = np.cos(t), np.sin(t)
+    return np.array([
+        [c, 0, s, 0],
+        [0, 1, 0, 0],
+        [-s, 0, c, 0],
+        [0, 0, 0, 1],
+    ], dtype=float)
+
+
+def visualize(V, F, C):
+    V = (V - (V.max(0) + V.min(0)) / 2) / max(V.max(0) - V.min(0))
+    MVP = perspective(40, 1, 1, 100) @ \
+          translate(0, 0, -2.5) @ \
+          xrotate(0.0) @ \
+          yrotate(0.0)
+
+    V = np.c_[V, np.ones(len(V))] @ MVP.T
+    V /= V[:, 3].reshape(-1, 1)
+    V = V[F]
+    C = C[F].mean(axis=1)
+
+    T = V[:, :, :2]
+    Z = -V[:, :, 2].mean(axis=1)
+    zmin, zmax = Z.min(), Z.max()
+    Z = (Z - zmin) / (zmax - zmin)
+    I = np.argsort(Z)
+    T, C = T[I, :], C[I, :]
+    fig = plt.figure(figsize=(6, 6))
+    ax = fig.add_axes(
+        (0, 0, 1, 1),
+        xlim=(-1, 1),
+        ylim=(-1, 1),
+        aspect=1,
+        frameon=False,
+    )
+
+    collection = PolyCollection(T, closed=True, linewidth=0.1, facecolor=C, edgecolor="black")
+    ax.add_collection(collection)
+
+    plt.tight_layout()
+    plt.show()
 
 
 def main():
@@ -17,9 +111,9 @@ def main():
     N = 128
     Nx, Ny, Nz = N - 8, N, N + 8
     x, y, z = np.mgrid[:Nx, :Ny, :Nz]
-    x = (x / Nx).astype('float32')
-    y = (y / Ny).astype('float32')
-    z = (z / Nz).astype('float32')
+    x = (x / N).astype('float32')
+    y = (y / N).astype('float32')
+    z = (z / N).astype('float32')
 
     # Implicit function (metaball)
     f0 = (x - 0.35)**2 + (y - 0.35)**2 + (z - 0.35)**2
@@ -37,13 +131,7 @@ def main():
     verts = verts.numpy()
     faces = faces.numpy()
     colrs = colrs.numpy()
-
-    mesh = o3d.geometry.TriangleMesh()
-    mesh.vertices = o3d.utility.Vector3dVector(verts)
-    mesh.triangles = o3d.utility.Vector3iVector(faces)
-    mesh.vertex_colors = o3d.utility.Vector3dVector(colrs)
-    wire = o3d.geometry.LineSet.create_from_triangle_mesh(mesh)
-    o3d.visualization.draw_geometries([mesh, wire], window_name='Marching cubes (CPU)')
+    visualize(verts, faces, colrs)
 
     # Test (GPU)
     if torch.cuda.is_available():
@@ -56,13 +144,7 @@ def main():
         verts = verts.cpu().numpy()
         faces = faces.cpu().numpy()
         colrs = colrs.cpu().numpy()
-
-        mesh = o3d.geometry.TriangleMesh()
-        mesh.vertices = o3d.utility.Vector3dVector(verts)
-        mesh.triangles = o3d.utility.Vector3iVector(faces)
-        mesh.vertex_colors = o3d.utility.Vector3dVector(colrs)
-        wire = o3d.geometry.LineSet.create_from_triangle_mesh(mesh)
-        o3d.visualization.draw_geometries([mesh, wire], window_name='Marching cubes (CUDA)')
+        visualize(verts, faces, colrs)
 
     else:
         print('CUDA is not available in this environment. Skip testing.')

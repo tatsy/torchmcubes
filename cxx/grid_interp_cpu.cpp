@@ -25,16 +25,15 @@ torch::Tensor grid_interp_cpu(torch::Tensor vol, torch::Tensor points) {
     const int C = vol.size(0);
     const int Np = points.size(0);
 
-    torch::Tensor output = torch::zeros({Np, C},
-        torch::TensorOptions().dtype(torch::kFloat32).device(vol.device()));
+    torch::Tensor output = torch::zeros({ Np, C }, torch::TensorOptions().dtype(torch::kFloat32).device(vol.device()));
 
     auto vol_ascr = vol.accessor<float, 4>();
     auto pts_ascr = points.accessor<float, 2>();
     auto out_ascr = output.accessor<float, 2>();
 
-    #ifdef _OPENMP
-    #pragma omp parallel for
-    #endif
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
     for (int i = 0; i < Np; i++) {
         const float x = pts_ascr[i][0];
         const float y = pts_ascr[i][1];
@@ -59,12 +58,12 @@ torch::Tensor grid_interp_cpu(torch::Tensor vol, torch::Tensor points) {
             const float v01 = (1.0 - fx) * vol_ascr[c][z0][y1][x0] + fx * vol_ascr[c][z0][y1][x1];
             const float v10 = (1.0 - fx) * vol_ascr[c][z1][y0][x0] + fx * vol_ascr[c][z1][y0][x1];
             const float v11 = (1.0 - fx) * vol_ascr[c][z1][y1][x0] + fx * vol_ascr[c][z1][y1][x1];
-            
+
             const float v0 = (1.0 - fy) * v00 + fy * v01;
             const float v1 = (1.0 - fy) * v10 + fy * v11;
 
             out_ascr[i][c] = (1.0 - fz) * v0 + fz * v1;
-        }         
+        }
     }
 
     return output;
