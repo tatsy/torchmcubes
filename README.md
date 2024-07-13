@@ -69,4 +69,4 @@ o3d.visualization.draw_geometries([mesh, wire], window_name='Marching cubes (CUD
 
 ## Copyright
 
-MIT License 2019-2021 (c) Tatsuya Yatagawa
+MIT License 2019-2024 (c) Tatsuya Yatagawa

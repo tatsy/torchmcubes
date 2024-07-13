@@ -1,14 +1,7 @@
 import argparse
 
 import numpy as np
-import matplotlib.pyplot as plt
-
-# isort: off
-# import open3d as o3d
 import torch
-# isort: on
-
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 
@@ -68,6 +61,11 @@ def yrotate(theta):
 
 
 def visualize(V, F, C):
+    """
+    This function is inspired by the following URL:
+    https://blog.scientific-python.org/matplotlib/custom-3d-engine/
+    """
+
     V = (V - (V.max(0) + V.min(0)) / 2) / max(V.max(0) - V.min(0))
     MVP = perspective(40, 1, 1, 100) @ \
           translate(0, 0, -2.5) @ \
@@ -94,7 +92,7 @@ def visualize(V, F, C):
         frameon=False,
     )
 
-    collection = PolyCollection(T, closed=True, linewidth=0.1, facecolor=C, edgecolor="black")
+    collection = PolyCollection(T, closed=True, linewidth=0.1, facecolor=C, edgecolor='black')
     ax.add_collection(collection)
 
     plt.show()
@@ -107,7 +105,7 @@ def main():
     args = parser.parse_args()
 
     # Grid data
-    N = 512
+    N = 128
     Nx, Ny, Nz = N - 8, N, N + 8
     x, y, z = np.mgrid[:Nx, :Ny, :Nz]
     x = (x / N).astype('float32')
