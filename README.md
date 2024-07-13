@@ -1,6 +1,8 @@
 torchmcubes: marching cubes for PyTorch
 ===
 
+[![Build (CPU)](https://github.com/tatsy/torchmcubes/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/tatsy/torchmcubes/actions/workflows/build.yml)
+
 > Marching cubes for PyTorch environment. Backend is implemented with C++ and CUDA.
 
 ## Install
