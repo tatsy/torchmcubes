@@ -97,7 +97,6 @@ def visualize(V, F, C):
     collection = PolyCollection(T, closed=True, linewidth=0.1, facecolor=C, edgecolor="black")
     ax.add_collection(collection)
 
-    plt.tight_layout()
     plt.show()
 
 
@@ -108,7 +107,7 @@ def main():
     args = parser.parse_args()
 
     # Grid data
-    N = 128
+    N = 512
     Nx, Ny, Nz = N - 8, N, N + 8
     x, y, z = np.mgrid[:Nx, :Ny, :Nz]
     x = (x / N).astype('float32')

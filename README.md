@@ -14,17 +14,16 @@ pip install git+https://github.com/tatsy/torchmcubes.git
 #### Build only
 
 ```shell
-# After cloning this repo...
-python setup.py build_ext -i
+# After cloning this repo and moving into the root folder
+poetry build
 ```
 
 ## Usage
 
-See [mcubes.py](./mcubes.py) for the detail.
+See [mcubes.py](./mcubes.py) for more details.
 
 ```python
 import numpy as np
-import open3d as o3d
 
 import torch
 from torchmcubes import marching_cubes, grid_interp
@@ -53,7 +52,9 @@ verts = verts.cpu().numpy()
 faces = faces.cpu().numpy()
 colrs = colrs.cpu().numpy()
 
-# Use Open3D for visualization
+# Use Open3D for visualization (optional)
+import open3d as o3d
+
 mesh = o3d.geometry.TriangleMesh()
 mesh.vertices = o3d.utility.Vector3dVector(verts)
 mesh.triangles = o3d.utility.Vector3iVector(faces)
