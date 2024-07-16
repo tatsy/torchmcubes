@@ -41,23 +41,29 @@ def translate(x, y, z):
 def xrotate(theta):
     t = np.pi * theta / 180
     c, s = np.cos(t), np.sin(t)
-    return np.array([
-        [1, 0, 0, 0],
-        [0, c, -s, 0],
-        [0, s, c, 0],
-        [0, 0, 0, 1],
-    ], dtype=float)
+    return np.array(
+        [
+            [1, 0, 0, 0],
+            [0, c, -s, 0],
+            [0, s, c, 0],
+            [0, 0, 0, 1],
+        ],
+        dtype=float,
+    )
 
 
 def yrotate(theta):
     t = np.pi * theta / 180
     c, s = np.cos(t), np.sin(t)
-    return np.array([
-        [c, 0, s, 0],
-        [0, 1, 0, 0],
-        [-s, 0, c, 0],
-        [0, 0, 0, 1],
-    ], dtype=float)
+    return np.array(
+        [
+            [c, 0, s, 0],
+            [0, 1, 0, 0],
+            [-s, 0, c, 0],
+            [0, 0, 0, 1],
+        ],
+        dtype=float,
+    )
 
 
 def visualize(V, F, C):
@@ -67,10 +73,7 @@ def visualize(V, F, C):
     """
 
     V = (V - (V.max(0) + V.min(0)) / 2) / max(V.max(0) - V.min(0))
-    MVP = perspective(40, 1, 1, 100) @ \
-          translate(0, 0, -2.5) @ \
-          xrotate(0.0) @ \
-          yrotate(0.0)
+    MVP = (perspective(40, 1, 1, 100) @ translate(0, 0, -2.5) @ xrotate(0.0) @ yrotate(0.0))
 
     V = np.c_[V, np.ones(len(V))] @ MVP.T
     V /= V[:, 3].reshape(-1, 1)
@@ -92,7 +95,7 @@ def visualize(V, F, C):
         frameon=False,
     )
 
-    collection = PolyCollection(T, closed=True, linewidth=0.1, facecolor=C, edgecolor='black')
+    collection = PolyCollection(T, closed=True, linewidth=0.1, facecolor=C, edgecolor="black")
     ax.add_collection(collection)
 
     plt.show()
@@ -101,16 +104,16 @@ def visualize(V, F, C):
 def main():
     # Arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', type=int, default=0)
+    parser.add_argument("--gpu", type=int, default=0)
     args = parser.parse_args()
 
     # Grid data
     N = 128
     Nx, Ny, Nz = N - 8, N, N + 8
     x, y, z = np.mgrid[:Nx, :Ny, :Nz]
-    x = (x / N).astype('float32')
-    y = (y / N).astype('float32')
-    z = (z / N).astype('float32')
+    x = (x / N).astype("float32")
+    y = (y / N).astype("float32")
+    z = (z / N).astype("float32")
 
     # Implicit function (metaball)
     f0 = (x - 0.35)**2 + (y - 0.35)**2 + (z - 0.35)**2
@@ -132,7 +135,7 @@ def main():
 
     # Test (GPU)
     if torch.cuda.is_available():
-        device = torch.device('cuda', args.gpu)
+        device = torch.device("cuda", args.gpu)
         u = u.to(device)
         rgb = rgb.to(device)
         verts, faces = marching_cubes(u, 15.0)
@@ -144,8 +147,8 @@ def main():
         visualize(verts, faces, colrs)
 
     else:
-        print('CUDA is not available in this environment. Skip testing.')
+        print("CUDA is not available in this environment. Skip testing.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -7,15 +7,17 @@ torchmcubes: marching cubes for PyTorch
 
 ## Install
 
+### Requirements
+
+- Python (3.9 or later)
+- NumPy (1.x is preferable)
+- PyTorch
+
+### Pip installation
+
 ```shell
+# Make sure that your environment meets the requirements above
 pip install git+https://github.com/tatsy/torchmcubes.git
-```
-
-#### Build only
-
-```shell
-# After cloning this repo and moving into the root folder
-poetry build
 ```
 
 ## Usage

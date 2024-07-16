@@ -1,45 +1,45 @@
-[tool.poetry]
+[project]
 name = "torchmcubes"
 version = "0.1.0"
-description = "torchmcubes: marching cubes for PyTorch"
-authors = ["Tatsuya Yatagawa <tatsy.mail@gmail.com>"]
-license = "MIT License"
+description = "torchmcubes: Marching Cubes for PyTorch"
 readme = "README.md"
+authors = [
+  {name = "Tatsuya Yatagawa", email = "tatsy.mail@gmail.com"}
+]
+license = {file = "LICENSE"}
 classifiers = [
+  "Development Status :: 4 - Beta",
   'Programming Language :: Python :: 3.9',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
 ]
-packages = [{ include = "torchmcubes" }]
+requires-python = ">=3.9"
+dependencies=["numpy", "torch"]
 
-[tool.poetry.build]
-script = "build_cxx.py"
-generate-setup-file = true
+[tool.scikit-build]
+build-dir = "build"
+wheel.license-files = []
+minimum-version = "0.2"
+logging.level = "INFO"
+ninja.make-fallback = true
 
-[tool.poetry.dependencies]
-python = ">=3.9"
-
-[tool.poetry.group.dev.dependencies]
-numpy = "^2.0.0"
-matplotlib = "^3.9.1"
-torch = ">=1.4"
-isort = "^5.13.2"
-mypy = "^1.10.1"
-black = "^24.4.2"
-yapf = "^0.40.2"
-pyproject-flake8 = "^7.0.0"
+[tool.scikit-build.cmake]
+minimum-version = "3.18"
+verbose = true
+source-dir = "."
+args = []
 
 [build-system]
-requires = ["poetry-core>=1.0.0", "setuptools>=57.0", "torch>=1.4"]
-build-backend = "poetry.core.masonry.api"
+requires = ["scikit-build-core>=0.2", "pybind11>=2.10"]
+build-backend = "scikit_build_core.build"
 
 [tool.isort]
 length_sort = true
 line_length = 120
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.11"
 follow_imports = "silent"
 disallow_any_generics = true
 strict_optional = true

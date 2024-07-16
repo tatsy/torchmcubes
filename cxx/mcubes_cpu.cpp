@@ -1,6 +1,5 @@
 #include <torch/extension.h>
 
-#define NOMINMAX
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>

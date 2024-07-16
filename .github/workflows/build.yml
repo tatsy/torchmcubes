@@ -2,8 +2,6 @@ name: Build (CPU)
 on:
   push:
     branches: [master, dev]
-  # release:
-  #   types: [published]
 
 jobs:
   build:
@@ -22,26 +20,14 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
-      - name: Install Poetry
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install poetry
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.version }}
-          cache: "poetry"
-      - name: Install dependencies
+      - name: Install requirements
         run: |
-          poetry install
+          python -m pip install --upgrade pip
+          python -m pip install numpy "pybind11[global]"
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Build
-        run: |
-          poetry install
-      # - name: Check
-      #   run: poetry run python -c "import cshogi"
-      # - name: Publish
-      #   if: github.event_name == 'release' && github.event.action == 'published'
-      #   env:
-      #     TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-      #     TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      #   run: twine upload dist/*
+        run: pip install .

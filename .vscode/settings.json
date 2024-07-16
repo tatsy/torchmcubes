@@ -1,0 +1,12 @@
+{
+    "flake8.path": "pflake8",
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": false,
+        "editor.formatOnType": false,
+        "editor.defaultFormatter": "eeyore.yapf",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "always",
+        }
+    }
+}

@@ -1,8 +1,14 @@
+import os
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+from typing import Tuple
+
 import torch
 import torchmcubes_module as mc
 
 
-def marching_cubes(vol, thresh):
+def marching_cubes(vol: torch.Tensor, thresh: float) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     vol: 3D torch tensor
     thresh: threshold
@@ -14,7 +20,7 @@ def marching_cubes(vol, thresh):
         return mc.mcubes_cpu(vol, thresh)
 
 
-def grid_interp(vol, points):
+def grid_interp(vol: torch.Tensor, points: torch.Tensor) -> torch.Tensor:
     """
     Interpolate volume data at given points
 
@@ -22,7 +28,7 @@ def grid_interp(vol, points):
         vol: 4D torch tensor (C, Nz, Ny, Nx)
         points: point locations (Np, 3)
     Outputs:
-        output: interpolated data (Np, C)    
+        output: interpolated data (Np, C)
     """
 
     if vol.is_cuda:
