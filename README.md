@@ -25,6 +25,7 @@ pip install git+https://github.com/tatsy/torchmcubes.git
 See [mcubes.py](./mcubes.py) for more details.
 
 ```python
+import time
 import numpy as np
 
 import torch
@@ -32,37 +33,37 @@ from torchmcubes import marching_cubes, grid_interp
 
 # Grid data
 N = 128
-x, y, z = np.mgrid[:N, :N, :N]
-x = (x / N).astype('float32')
-y = (y / N).astype('float32')
-z = (z / N).astype('float32')
+xs = np.linspace(-1.0, 1.0, N, endpoint=True, dtype="float32")
+ys = np.linspace(-1.0, 1.0, N, endpoint=True, dtype="float32")
+zs = np.linspace(-1.0, 1.0, N, endpoint=True, dtype="float32")
+zs, ys, xs = np.meshgrid(zs, ys, xs)
 
 # Implicit function (metaball)
-f0 = (x - 0.35) ** 2 + (y - 0.35) ** 2 + (z - 0.35) ** 2
-f1 = (x - 0.65) ** 2 + (y - 0.65) ** 2 + (z - 0.65) ** 2
-u = 1.0 / f0 + 1.0 / f1
-rgb = np.stack((x, y, z), axis=-1)
-rgb = np.transpose(rgb, axes=(3, 2, 1, 0)).copy()
+f0 = (xs - 0.35)**2 + (ys - 0.35)**2 + (zs - 0.35)**2
+f1 = (xs + 0.35)**2 + (ys + 0.35)**2 + (zs + 0.35)**2
+u = 4.0 / (f0 + 1.0e-6) + 4.0 / (f1 + 1.0e-6)
+
+rgb = np.stack((xs, ys, zs), axis=-1) * 0.5 + 0.5
+rgb = np.transpose(rgb, axes=(3, 2, 1, 0))
+rgb = np.ascontiguousarray(rgb)
 
 # Test
-u = torch.from_numpy(u).cuda()
-rgb = torch.from_numpy(rgb).cuda()
+u = torch.from_numpy(u)
+rgb = torch.from_numpy(rgb)
+u = u.cuda()
+rgb = rgb.cuda()
+
+t_start = time.time()
 verts, faces = marching_cubes(u, 15.0)
-colrs = grid_interp(rgb, verts)
+colors = grid_interp(rgb, verts)
+t_end = time.time()
+print(f"verts: {verts.size(0)}, faces: {faces.size(0)}, time: {t_end - t_start:.2f}s")
 
-verts = verts.cpu().numpy()
-faces = faces.cpu().numpy()
-colrs = colrs.cpu().numpy()
-
-# Use Open3D for visualization (optional)
-import open3d as o3d
-
-mesh = o3d.geometry.TriangleMesh()
-mesh.vertices = o3d.utility.Vector3dVector(verts)
-mesh.triangles = o3d.utility.Vector3iVector(faces)
-mesh.vertex_colors = o3d.utility.Vector3dVector(colrs)
-wire = o3d.geometry.LineSet.create_from_triangle_mesh(mesh)
-o3d.visualization.draw_geometries([mesh, wire], window_name='Marching cubes (CUDA)')
+verts = verts.detach().cpu().numpy()
+faces = faces.detach().cpu().numpy()
+colors = colors.detach().cpu().numpy()
+verts = (verts / (N - 1)) * 2.0 - 1.0  # Get back to the original space
+visualize(verts, faces, colors)
 ```
 
 ## Screen shot

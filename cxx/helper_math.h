@@ -28,34 +28,6 @@
 typedef unsigned int uint;
 typedef unsigned short ushort;
 
-#ifndef __CUDACC__
-#include <math.h>
-
-////////////////////////////////////////////////////////////////////////////////
-// host implementations of CUDA functions
-////////////////////////////////////////////////////////////////////////////////
-
-inline float fminf(float a, float b) {
-    return a < b ? a : b;
-}
-
-inline float fmaxf(float a, float b) {
-    return a > b ? a : b;
-}
-
-inline int max(int a, int b) {
-    return a > b ? a : b;
-}
-
-inline int min(int a, int b) {
-    return a < b ? a : b;
-}
-
-inline float rsqrtf(float x) {
-    return 1.0f / sqrtf(x);
-}
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 // constructors
 ////////////////////////////////////////////////////////////////////////////////

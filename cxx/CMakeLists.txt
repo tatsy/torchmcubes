@@ -11,9 +11,7 @@ if (CMAKE_CUDA_COMPILER)
     helper_math.h
     macros.h
     mcubes_cuda.cu
-    grid_interp_cuda.cu
-    pscan.h
-    pscan.cu)
+    grid_interp_cuda.cu)
 endif()
 
 target_link_libraries(${BUILD_TARGET} PRIVATE

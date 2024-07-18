@@ -8,5 +8,11 @@
         "editor.codeActionsOnSave": {
             "source.organizeImports": "always",
         }
+    },
+    "[c][cxx][cuda]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": false,
+        "editor.formatOnType": false,
+        "editor.defaultFormatter": "xaver.clang-format"
     }
 }

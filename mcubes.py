@@ -1,3 +1,4 @@
+import time
 import argparse
 
 import numpy as np
@@ -95,7 +96,7 @@ def visualize(V, F, C):
         frameon=False,
     )
 
-    collection = PolyCollection(T, closed=True, linewidth=0.1, facecolor=C, edgecolor="black")
+    collection = PolyCollection(T, closed=True, linewidth=0.1, facecolor=C, edgecolor="#00000033")
     ax.add_collection(collection)
 
     plt.show()
@@ -109,42 +110,53 @@ def main():
 
     # Grid data
     N = 128
-    Nx, Ny, Nz = N - 8, N, N + 8
-    x, y, z = np.mgrid[:Nx, :Ny, :Nz]
-    x = (x / N).astype("float32")
-    y = (y / N).astype("float32")
-    z = (z / N).astype("float32")
+    xs = np.linspace(-1.0, 1.0, N, endpoint=True, dtype="float32")
+    ys = np.linspace(-1.0, 1.0, N, endpoint=True, dtype="float32")
+    zs = np.linspace(-1.0, 1.0, N, endpoint=True, dtype="float32")
+    zs, ys, xs = np.meshgrid(zs, ys, xs)
 
     # Implicit function (metaball)
-    f0 = (x - 0.35)**2 + (y - 0.35)**2 + (z - 0.35)**2
-    f1 = (x - 0.65)**2 + (y - 0.65)**2 + (z - 0.65)**2
-    u = 1.0 / f0 + 1.0 / f1
-    rgb = np.stack((x, y, z), axis=-1)
-    rgb = np.transpose(rgb, axes=(3, 2, 1, 0)).copy()
+    f0 = (xs - 0.35)**2 + (ys - 0.35)**2 + (zs - 0.35)**2
+    f1 = (xs + 0.35)**2 + (ys + 0.35)**2 + (zs + 0.35)**2
+    u = 4.0 / (f0 + 1.0e-6) + 4.0 / (f1 + 1.0e-6)
+
+    rgb = np.stack((xs, ys, zs), axis=-1) * 0.5 + 0.5
+    rgb = np.transpose(rgb, axes=(3, 2, 1, 0))
+    rgb = np.ascontiguousarray(rgb)
 
     # Test (CPU)
     u = torch.from_numpy(u)
     rgb = torch.from_numpy(rgb)
+
+    t_start = time.time()
     verts, faces = marching_cubes(u, 15.0)
-    colrs = grid_interp(rgb, verts)
+    colors = grid_interp(rgb, verts)
+    t_end = time.time()
+    print(f"verts: {verts.size(0)}, faces: {faces.size(0)}, time: {t_end - t_start:.2f}s")
 
     verts = verts.numpy()
     faces = faces.numpy()
-    colrs = colrs.numpy()
-    visualize(verts, faces, colrs)
+    colors = colors.numpy()
+    verts = (verts / (N - 1)) * 2.0 - 1.0  # Get back to the original space
+    visualize(verts, faces, colors)
 
     # Test (GPU)
     if torch.cuda.is_available():
         device = torch.device("cuda", args.gpu)
         u = u.to(device)
         rgb = rgb.to(device)
-        verts, faces = marching_cubes(u, 15.0)
-        colrs = grid_interp(rgb, verts)
 
-        verts = verts.cpu().numpy()
-        faces = faces.cpu().numpy()
-        colrs = colrs.cpu().numpy()
-        visualize(verts, faces, colrs)
+        t_start = time.time()
+        verts, faces = marching_cubes(u, 15.0)
+        colors = grid_interp(rgb, verts)
+        t_end = time.time()
+        print(f"verts: {verts.size(0)}, faces: {faces.size(0)}, time: {t_end - t_start:.2f}s")
+
+        verts = verts.detach().cpu().numpy()
+        faces = faces.detach().cpu().numpy()
+        colors = colors.detach().cpu().numpy()
+        verts = (verts / (N - 1)) * 2.0 - 1.0  # Get back to the original space
+        visualize(verts, faces, colors)
 
     else:
         print("CUDA is not available in this environment. Skip testing.")

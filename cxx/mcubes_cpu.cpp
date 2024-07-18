@@ -69,11 +69,9 @@ XYZ VertexInterp(float isolevel, XYZ p1, XYZ p2, float valp1, float valp2) {
     float mu;
     XYZ p;
 
-    if (std::abs(isolevel - valp1) < 0.00001) return (p1);
-
-    if (std::abs(isolevel - valp2) < 0.00001) return (p2);
-
-    if (std::abs(valp1 - valp2) < 0.00001) return (p1);
+    if (std::abs(isolevel - valp1) < 1.0e-4f) return p1;
+    if (std::abs(isolevel - valp2) < 1.0e-4f) return p2;
+    if (std::abs(valp1 - valp2) < 1.0e-4f) return p1;
 
     mu = (isolevel - valp1) / (valp2 - valp1);
     p.x = p1.x + mu * (p2.x - p1.x);
