@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15...3.27)
+cmake_minimum_required(VERSION 3.18...3.27)
 project(${SKBUILD_PROJECT_NAME} VERSION ${SKBUILD_PROJECT_VERSION} LANGUAGES CXX)
 
 # General settings
@@ -9,7 +9,6 @@ include(CheckLanguage)
 check_language(CUDA)
 
 if(CMAKE_CUDA_COMPILER)
-  set(CMAKE_CUDA_ARCHITECTURES "native")
   enable_language(CUDA)
 
   add_definitions(-DWITH_CUDA)
@@ -22,6 +21,7 @@ if(CMAKE_CUDA_COMPILER)
   message(STATUS "CMAKE_CUDA_COMPILER = ${CMAKE_CUDA_COMPILER}")
   message(STATUS "CMAKE_CUDA_COMPILER_ID = ${CMAKE_CUDA_COMPILER_ID}")
   message(STATUS "CMAKE_CUDA_COMPILER_VERSION = ${CUDA_V}")
+
 else()
   message(STATUS "NO CUDA INSTALLATION FOUND, INSTALLING CPU VERSION ONLY!")
   # execute_process(COMMAND ${Python_EXECUTABLE} -m pip uninstall -y torch)
