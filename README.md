@@ -12,6 +12,21 @@ torchmcubes: marching cubes for PyTorch
 - Python (3.9 or later)
 - NumPy (1.x is preferable)
 - PyTorch
+- cmake (3.18 or later)
+
+Make sure that you have nvcc CUDA compiler
+
+```shell
+nvcc --version
+```
+
+If you have CUDA installed but not able to run nvcc, you migth need to add it to your path:
+
+```shell
+export CUDA_HOME=/usr/local/cuda/
+export PATH=$CUDA_HOME/bin:$PATH
+```
+
 
 ### Pip installation
 
