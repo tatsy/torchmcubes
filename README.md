@@ -1,5 +1,4 @@
-torchmcubes: marching cubes for PyTorch
-===
+# torchmcubes: marching cubes for PyTorch
 
 [![Build (CPU)](https://github.com/tatsy/torchmcubes/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/tatsy/torchmcubes/actions/workflows/build.yml)
 
@@ -12,9 +11,9 @@ torchmcubes: marching cubes for PyTorch
 - Python (3.9 or later)
 - NumPy (1.x is preferable)
 - PyTorch
-- cmake (3.18 or later)
+- CMake (3.18 or later)
 
-Make sure that you have nvcc CUDA compiler
+Make sure that you have nvcc CUDA compiler with the following command.
 
 ```shell
 nvcc --version
@@ -26,7 +25,6 @@ If you have CUDA installed but not able to run nvcc, you migth need to add it to
 export CUDA_HOME=/usr/local/cuda/
 export PATH=$CUDA_HOME/bin:$PATH
 ```
-
 
 ### Pip installation
 

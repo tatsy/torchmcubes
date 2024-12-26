@@ -21,7 +21,6 @@ if(CMAKE_CUDA_COMPILER)
   message(STATUS "CMAKE_CUDA_COMPILER = ${CMAKE_CUDA_COMPILER}")
   message(STATUS "CMAKE_CUDA_COMPILER_ID = ${CMAKE_CUDA_COMPILER_ID}")
   message(STATUS "CMAKE_CUDA_COMPILER_VERSION = ${CUDA_V}")
-
 else()
   message(WARNING "NO CUDA INSTALLATION FOUND, TRYING TO INSTALL CPU VERSION ONLY!")
 endif()
@@ -41,17 +40,8 @@ find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(OpenMP)
 
-# Try nvToolsExt workaround
-# https://discuss.pytorch.org/t/failed-to-find-nvtoolsext/179635/13
-if (CMAKE_CUDA_COMPILER)
-  if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
-      add_library(CUDA::nvToolsExt INTERFACE IMPORTED)
-      target_link_libraries(CUDA::nvToolsExt INTERFACE CUDA::nvtx3)
-  endif()
-endif()
-
 find_package(Torch CONFIG REQUIRED)
-find_library(TORCH_PYTHON_LIBRARY torch_python PATH "${TORCH_INSTALL_PREFIX}/lib" REQUIRED)
+find_library(TORCH_PYTHON_LIBRARY torch_python PATH "${TORCH_INSTALL_PREFIX}/lib")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 add_subdirectory(cxx)

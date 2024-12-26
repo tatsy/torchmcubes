@@ -1,11 +1,4 @@
-foreach (DIR IN LISTS TORCH_INCLUDE_DIRS)
-  if (EXISTS "${DIR}")
-    include_directories(${DIR})
-  else()
-    message(WARNING "Directory ${DIR} does not exist.")
-  endif()
-endforeach()
-
+include_directories (${TORCH_INCLUDE_DIRS})
 Python_add_library(${BUILD_TARGET}
   mcubes.cpp
   mcubes_cpu.cpp
@@ -22,16 +15,9 @@ endif()
 
 target_link_libraries(${BUILD_TARGET} PRIVATE
   pybind11::headers
+  ${TORCH_LIBRARIES}
   ${TORCH_PYTHON_LIBRARY}
 )
-
-foreach (LIB IN LISTS TORCH_LIBRARIES)
-  if (EXISTS ${LIB} OR ${LIB} MATCHES "torch.*")
-    target_link_libraries(${BUILD_TARGET} PRIVATE ${LIB})
-  else()
-    message(WARNING "Library ${LIB} does not exist.")
-  endif()
-endforeach()
 
 if (OPENMP_FOUND)
   target_link_libraries(${BUILD_TARGET} PRIVATE OpenMP::OpenMP_CXX)
