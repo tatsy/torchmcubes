@@ -1,5 +1,4 @@
-include_directories(${TORCH_INCLUDE_DIRS})
-
+include_directories (${TORCH_INCLUDE_DIRS})
 Python_add_library(${BUILD_TARGET}
   mcubes.cpp
   mcubes_cpu.cpp
@@ -17,7 +16,8 @@ endif()
 target_link_libraries(${BUILD_TARGET} PRIVATE
   pybind11::headers
   ${TORCH_LIBRARIES}
-  ${TORCH_PYTHON_LIBRARY})
+  ${TORCH_PYTHON_LIBRARY}
+)
 
 if (OPENMP_FOUND)
   target_link_libraries(${BUILD_TARGET} PRIVATE OpenMP::OpenMP_CXX)
