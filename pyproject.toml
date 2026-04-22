@@ -36,7 +36,7 @@ license-files = ["LICENSE"]
 exclude = ["**/.mypy_cache/**", "**/build/**", "**/.vscode/**"]
 
 [build-system]
-requires = ["scikit-build-core>=0.10", "pybind11>=2.10", "cmake", "ninja"]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.10", "cmake", "ninja", "torch"]
 build-backend = "scikit_build_core.build"
 
 [tool.isort]
