@@ -11,7 +11,8 @@
 - Python (3.9 or later)
 - NumPy (1.x is preferable)
 - PyTorch
-- CMake (3.18 or later)
+- C++17 compiler (GCC, Clang, or MSVC)
+- CMake (3.18 or later) and Ninja (both can be installed with pip, see below)
 
 Make sure that you have nvcc CUDA compiler with the following command.
 
@@ -19,7 +20,7 @@ Make sure that you have nvcc CUDA compiler with the following command.
 nvcc --version
 ```
 
-If you have CUDA installed but not able to run nvcc, you migth need to add it to your path:
+If you have CUDA installed but not able to run nvcc, you might need to add it to your path:
 
 ```shell
 export CUDA_HOME=/usr/local/cuda/
@@ -28,10 +29,26 @@ export PATH=$CUDA_HOME/bin:$PATH
 
 ### Pip installation
 
+torchmcubes is compiled against the PyTorch installed in your environment. Install PyTorch first, then install the build dependencies and torchmcubes **without build isolation**.
+
 ```shell
-# Make sure that your environment meets the requirements above
-pip install git+https://github.com/tatsy/torchmcubes.git
+# 1. Install PyTorch (see https://pytorch.org/get-started/locally/ for the right command)
+pip install torch
+
+# 2. Install build dependencies
+pip install scikit-build-core pybind11 cmake ninja
+
+# 3. Build and install torchmcubes against the PyTorch installed above
+pip install --no-build-isolation git+https://github.com/tatsy/torchmcubes.git
 ```
+
+To build from a local checkout, run `pip install --no-build-isolation .` in the repository root instead of the last command.
+
+#### Why `--no-build-isolation`?
+
+By default, pip builds packages in a temporary, isolated environment. PyTorch cannot be listed as a build dependency there because the correct build (CPU, CUDA version, ...) depends on your environment, and a PyTorch downloaded into the isolated environment would not necessarily match the one you use at runtime. `--no-build-isolation` tells pip to build directly in your environment so that CMake finds your PyTorch. This is also why the build dependencies in step 2 must be installed manually.
+
+If you see an error like `Could not find a package configuration file provided by "Torch"`, you most likely forgot `--no-build-isolation` or PyTorch is not installed in the active environment.
 
 ## Usage
 
