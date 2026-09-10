@@ -5,18 +5,17 @@ readme = "README.md"
 authors = [
   {name = "Tatsuya Yatagawa", email = "tatsy.mail@gmail.com"}
 ]
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   'Programming Language :: Python :: 3.9',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
+  'Programming Language :: Python :: 3.13',
 ]
 requires-python = ">=3.9"
-# version: read from torchmcubes/__init__.py (__version__).
-# dependencies: torch, pinned at build time to the minor series of the torch
-# the extension is compiled against (see _torch_dep.py).
 dynamic = ["version", "dependencies"]
 
 [[tool.dynamic-metadata]]
@@ -30,7 +29,6 @@ provider = { path = ".", module = "_torch_dep:Provider" }
 [tool.scikit-build]
 build-dir = "build"
 minimum-version = "1.0"
-# Required for the local dynamic-metadata provider in _torch_dep.py.
 experimental = true
 ninja.make-fallback = true
 logging.level = "INFO"
@@ -44,7 +42,6 @@ source-dir = "."
 args = []
 
 [tool.scikit-build.wheel]
-license-files = ["LICENSE"]
 exclude = ["**/.mypy_cache/**", "**/build/**", "**/.vscode/**"]
 
 [build-system]
