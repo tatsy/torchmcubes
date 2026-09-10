@@ -44,4 +44,4 @@ jobs:
         working-directory: ${{ runner.temp }}
         run: |
           python -c "import torchmcubes; print(torchmcubes.__file__, torchmcubes.__version__)"
-          python -m pip show torchmcubes
+          python -c "import importlib.metadata as m; print('Requires-Dist:', m.requires('torchmcubes'))"
