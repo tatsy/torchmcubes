@@ -5,7 +5,7 @@ readme = "README.md"
 authors = [
   {name = "Tatsuya Yatagawa", email = "tatsy.mail@gmail.com"}
 ]
-license = "MIT"
+license = "MPL-2.0"
 license-files = ["LICENSE"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",

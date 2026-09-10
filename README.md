@@ -96,4 +96,4 @@ visualize(verts, faces, colors)
 
 ## Copyright
 
-MIT License 2019-2026 (c) Tatsuya Yatagawa
+Mozilla Public License 2.0, 2019-2026 (c) Tatsuya Yatagawa
