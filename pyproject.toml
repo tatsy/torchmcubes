@@ -45,10 +45,6 @@ args = []
 exclude = ["**/.mypy_cache/**", "**/build/**", "**/.vscode/**"]
 
 [build-system]
-# cmake and ninja are injected by scikit-build-core when needed, so they are
-# not listed here. torch is deliberately absent: the correct torch build
-# (CPU / CUDA version) depends on the environment, so torchmcubes must be built
-# with --no-build-isolation against the torch already installed (see README).
 requires = ["scikit-build-core>=1.0", "pybind11>=2.10"]
 build-backend = "scikit_build_core.build"
 

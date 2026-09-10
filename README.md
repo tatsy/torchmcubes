@@ -10,7 +10,7 @@
 
 - Python (3.9 or later)
 - PyTorch
-- C++20 compiler (GCC 10+, Clang 10+, or Visual Studio 2019 16.11+), required by recent PyTorch headers
+- C++20 compiler (GCC 10+, Clang 12+, or Visual Studio 2019 16.11+), required by recent PyTorch headers
 - CUDA Toolkit 12 or later (optional, only for GPU support; nvcc needs CUDA 12 for C++20)
 - CMake (3.18 or later)
 
