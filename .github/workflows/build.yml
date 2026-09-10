@@ -19,21 +19,26 @@ jobs:
           - "3.10"
           - "3.11"
           - "3.12"
+          - "3.13"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v5
+
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.version }}
+
       - name: Install PyTorch (CPU)
         run: |
           python -m pip install --upgrade pip
           python -m pip install numpy
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+
       - name: Install build dependencies
-        run: python -m pip install scikit-build-core pybind11 cmake ninja
+        run: python -m pip install scikit-build-core pybind11
+
       - name: Build
         # Same command as documented in README: build against the PyTorch
         # installed above instead of an isolated build environment.
