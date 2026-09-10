@@ -12,6 +12,7 @@
 - PyTorch
 - C++20 compiler (GCC 10+, Clang 12+, or Visual Studio 2019 16.11+), required by recent PyTorch headers
 - CUDA Toolkit 12 or later (optional, only for GPU support; nvcc needs CUDA 12 for C++20)
+  - Without a CUDA toolkit a CPU-only build is produced. CUDA tensors are then processed on the CPU with a warning. ROCm/HIP is not supported.
 - CMake (3.18 or later)
 
 Make sure that you have nvcc CUDA compiler with the following command.
