@@ -11,7 +11,8 @@
 - Python (3.9 or later)
 - NumPy (1.x is preferable)
 - PyTorch
-- C++17 compiler (GCC, Clang, or MSVC)
+- C++20 compiler (GCC 10+, Clang 10+, or Visual Studio 2019 16.11+), required by recent PyTorch headers
+- CUDA Toolkit 12 or later (optional, only for GPU support; nvcc needs CUDA 12 for C++20)
 - CMake (3.18 or later) and Ninja (both can be installed with pip, see below)
 
 Make sure that you have nvcc CUDA compiler with the following command.
