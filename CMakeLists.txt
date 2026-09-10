@@ -41,6 +41,22 @@ find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(OpenMP)
 
+# Ask torch itself where its CMake config lives: on RHEL-family platforms the
+# build env splits site-packages into lib/ and lib64/, and a bare find_package
+# never looks inside either.
+# AUTOLOAD=0: a torch backend extension (e.g. torch-rbln) must not have to
+# load just to answer a path query.
+execute_process(
+  COMMAND "${CMAKE_COMMAND}" -E env TORCH_DEVICE_BACKEND_AUTOLOAD=0
+          "${Python_EXECUTABLE}" -c "import torch; print(torch.utils.cmake_prefix_path)"
+  OUTPUT_VARIABLE TORCH_CMAKE_PREFIX_PATH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  RESULT_VARIABLE TORCH_QUERY_RESULT
+)
+if(TORCH_QUERY_RESULT EQUAL 0)
+  list(APPEND CMAKE_PREFIX_PATH "${TORCH_CMAKE_PREFIX_PATH}")
+endif()
+
 find_package(Torch CONFIG REQUIRED)
 find_library(TORCH_PYTHON_LIBRARY torch_python PATH "${TORCH_INSTALL_PREFIX}/lib")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
