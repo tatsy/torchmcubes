@@ -1,25 +1,35 @@
 [project]
 name = "torchmcubes"
-version = "0.1.0"
 description = "torchmcubes: Marching Cubes for PyTorch"
 readme = "README.md"
 authors = [
   {name = "Tatsuya Yatagawa", email = "tatsy.mail@gmail.com"}
 ]
-license = {file = "LICENSE"}
+license = "MPL-2.0"
+license-files = ["LICENSE"]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   'Programming Language :: Python :: 3.9',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
+  'Programming Language :: Python :: 3.13',
 ]
 requires-python = ">=3.9"
-dependencies=["numpy", "torch"]
+dynamic = ["version", "dependencies"]
+
+[[tool.dynamic-metadata]]
+provider = "scikit_build_core.metadata.regex"
+field = "version"
+input = "torchmcubes/__init__.py"
+
+[[tool.dynamic-metadata]]
+provider = { path = ".", module = "_torch_dep:Provider" }
 
 [tool.scikit-build]
 build-dir = "build"
-minimum-version = "0.10"
+minimum-version = "1.0"
+experimental = true
 ninja.make-fallback = true
 logging.level = "INFO"
 build.verbose = true
@@ -27,16 +37,15 @@ messages.after-success = "SUCCESS!!"
 messages.after-failure = "FAILURE!!"
 
 [tool.scikit-build.cmake]
-version = ">=3.15"
+version = ">=3.18"
 source-dir = "."
 args = []
 
 [tool.scikit-build.wheel]
-license-files = ["LICENSE"]
 exclude = ["**/.mypy_cache/**", "**/build/**", "**/.vscode/**"]
 
 [build-system]
-requires = ["scikit-build-core>=0.10", "pybind11>=2.10", "cmake", "ninja"]
+requires = ["scikit-build-core>=1.0", "pybind11>=2.10"]
 build-backend = "scikit_build_core.build"
 
 [tool.isort]

@@ -2,10 +2,13 @@ name: Build (CPU)
 on:
   push:
     branches: [master, dev]
+  pull_request:
+    branches: [master, dev]
 
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest
@@ -16,18 +19,34 @@ jobs:
           - "3.10"
           - "3.11"
           - "3.12"
+          - "3.13"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.version }}
-      - name: Install requirements
+
+      - name: Install PyTorch (CPU)
         run: |
           python -m pip install --upgrade pip
-          python -m pip install numpy "pybind11[global]"
+          python -m pip install numpy
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install build dependencies
+        run: python -m pip install scikit-build-core pybind11
+
       - name: Build
-        run: pip install .
+        # Same command as documented in README: build against the PyTorch
+        # installed above instead of an isolated build environment.
+        run: pip install --no-build-isolation .
+      - name: Import test
+        # Run outside the repository root so the installed package is imported,
+        # not the source directory.
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -c "import torchmcubes; print(torchmcubes.__file__, torchmcubes.__version__)"
+          python -c "import importlib.metadata as m; print('Requires-Dist:', m.requires('torchmcubes'))"

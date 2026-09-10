@@ -9,8 +9,9 @@
 ### Requirements
 
 - Python (3.9 or later)
-- NumPy (1.x is preferable)
 - PyTorch
+- C++20 compiler (GCC 10+, Clang 12+, or Visual Studio 2019 16.11+), required by recent PyTorch headers
+- CUDA Toolkit 12 or later (optional, only for GPU support; nvcc needs CUDA 12 for C++20)
 - CMake (3.18 or later)
 
 Make sure that you have nvcc CUDA compiler with the following command.
@@ -19,7 +20,7 @@ Make sure that you have nvcc CUDA compiler with the following command.
 nvcc --version
 ```
 
-If you have CUDA installed but not able to run nvcc, you migth need to add it to your path:
+If you have CUDA installed but not able to run nvcc, you might need to add it to your path:
 
 ```shell
 export CUDA_HOME=/usr/local/cuda/
@@ -28,14 +29,24 @@ export PATH=$CUDA_HOME/bin:$PATH
 
 ### Pip installation
 
+torchmcubes is compiled against the PyTorch installed in your environment. Install PyTorch first, then install the build dependencies and torchmcubes **without build isolation**.
+
 ```shell
-# Make sure that your environment meets the requirements above
-pip install git+https://github.com/tatsy/torchmcubes.git
+# 1. Install PyTorch (if you need GPU support, choose the correct CUDA version)
+pip install torch
+
+# 2. Install build dependencies
+pip install scikit-build-core pybind11
+
+# 3. Build and install torchmcubes against the PyTorch installed above
+pip install --no-build-isolation git+https://github.com/tatsy/torchmcubes.git
 ```
+
+To build from a local checkout, run `pip install --no-build-isolation .` in the repository root instead of the last command.
 
 ## Usage
 
-See [mcubes.py](./mcubes.py) for more details.
+See [mcubes.py](./mcubes.py) for more details (the example additionally needs `numpy` and `matplotlib`).
 
 ```python
 import time
@@ -85,4 +96,4 @@ visualize(verts, faces, colors)
 
 ## Copyright
 
-MIT License 2019-2024 (c) Tatsuya Yatagawa
+Mozilla Public License 2.0, 2019-2026 (c) Tatsuya Yatagawa

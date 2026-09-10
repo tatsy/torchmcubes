@@ -13,7 +13,7 @@ if(CMAKE_CUDA_COMPILER)
 
   add_definitions(-DWITH_CUDA)
   find_package(CUDAToolkit REQUIRED)
-  set(CMAKE_CUDA_STANDARD 17)
+  set(CMAKE_CUDA_STANDARD 20)
   set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
   message(STATUS "INSTALLING EXTENSIONS WITH CUDA!")
@@ -25,7 +25,10 @@ else()
   message(WARNING "NO CUDA INSTALLATION FOUND, TRYING TO INSTALL CPU VERSION ONLY!")
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+# Recent PyTorch headers require C++20 (torch/all.h and ATen/ATen.h emit
+# #error otherwise; torch 2.14 requires it, torch 2.9 still accepted C++17).
+# Older torch versions compile fine with C++20 as well.
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
