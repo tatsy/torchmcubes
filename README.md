@@ -9,7 +9,6 @@
 ### Requirements
 
 - Python (3.9 or later)
-- NumPy (1.x is preferable)
 - PyTorch
 - C++20 compiler (GCC 10+, Clang 10+, or Visual Studio 2019 16.11+), required by recent PyTorch headers
 - CUDA Toolkit 12 or later (optional, only for GPU support; nvcc needs CUDA 12 for C++20)
@@ -51,9 +50,11 @@ By default, pip builds packages in a temporary, isolated environment. PyTorch ca
 
 If you see an error like `Could not find a package configuration file provided by "Torch"`, you most likely forgot `--no-build-isolation` or PyTorch is not installed in the active environment.
 
+The built package records the PyTorch it was compiled against as its requirement (for example `torch==2.14.*`), because the extension module is bound to that PyTorch's C++ ABI. If you later upgrade PyTorch to a different minor version, reinstall torchmcubes to rebuild it.
+
 ## Usage
 
-See [mcubes.py](./mcubes.py) for more details.
+See [mcubes.py](./mcubes.py) for more details (the example additionally needs `numpy` and `matplotlib`).
 
 ```python
 import time

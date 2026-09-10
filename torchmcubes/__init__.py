@@ -1,5 +1,7 @@
 import os
 
+__version__ = "0.1.0"
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 from typing import Tuple

@@ -42,4 +42,6 @@ jobs:
         # Run outside the repository root so the installed package is imported,
         # not the source directory.
         working-directory: ${{ runner.temp }}
-        run: python -c "import torchmcubes; print(torchmcubes.__file__)"
+        run: |
+          python -c "import torchmcubes; print(torchmcubes.__file__, torchmcubes.__version__)"
+          python -m pip show torchmcubes
