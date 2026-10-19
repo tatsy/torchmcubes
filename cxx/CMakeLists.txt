@@ -7,7 +7,6 @@ Python_add_library(${BUILD_TARGET}
 if (CMAKE_CUDA_COMPILER)
   target_sources(${BUILD_TARGET} PRIVATE
     cuda_utils.h
-    helper_math.h
     macros.h
     mcubes_cuda.cu
     grid_interp_cuda.cu)
