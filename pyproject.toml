@@ -2,9 +2,7 @@
 name = "torchmcubes"
 description = "torchmcubes: Marching Cubes for PyTorch"
 readme = "README.md"
-authors = [
-  {name = "Tatsuya Yatagawa", email = "tatsy.mail@gmail.com"}
-]
+authors = [{ name = "Tatsuya Yatagawa", email = "tatsy.mail@gmail.com" }]
 license = "MPL-2.0"
 license-files = ["LICENSE"]
 classifiers = [
@@ -17,6 +15,37 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dynamic = ["version", "dependencies"]
+
+[dependency-groups]
+dev = [
+  "torch==2.6.0",
+  "scikit-build-core>=1.0",
+  "pybind11>=2.10",
+  "ruff>=0.17.1",
+  "ty>=0.0.89",
+  "numpy>=2.0.2",
+  "matplotlib>=3.9.4",
+]
+
+[tool.uv]
+no-build-isolation = true
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu124", marker = "sys_platform == 'win32'" },
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux'" },
+  { index = "pytorch-cpu", marker = "sys_platform == 'darwin'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
 
 [[tool.dynamic-metadata]]
 provider = "scikit_build_core.metadata.regex"
@@ -37,7 +66,7 @@ messages.after-success = "SUCCESS!!"
 messages.after-failure = "FAILURE!!"
 
 [tool.scikit-build.cmake]
-version = ">=3.18"
+version = ">=3.24"
 source-dir = "."
 args = []
 
@@ -48,31 +77,29 @@ exclude = ["**/.mypy_cache/**", "**/build/**", "**/.vscode/**"]
 requires = ["scikit-build-core>=1.0", "pybind11>=2.10"]
 build-backend = "scikit_build_core.build"
 
-[tool.isort]
-length_sort = true
-line_length = 120
+[tool.ruff]
+target-version = "py39"
+line-length = 120
 
-[tool.mypy]
-python_version = "3.11"
-follow_imports = "silent"
-disallow_any_generics = true
-strict_optional = true
-check_untyped_defs = true
-allow_redefinition = true
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = "lf"
 
-[tool.flake8]
-max-line-length = 120
-ignore = "Q000,E203,W503,W504"
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "B", "UP", "SIM"]
+ignore = ["N806", "N812", "SIM108"]
+fixable = ["ALL"]
+unfixable = ["F401", "F841"]
 
-[tool.yapf]
-based_on_style = "pep8"
-column_limit = 120
-indent_width = 4
+[tool.ruff.lint.isort]
+length-sort = true
+lines-after-imports = 2
+split-on-trailing-comma = true
 
-ALIGN_CLOSING_BRACKET_WITH_VISUAL_INDENT = true
-COALESCE_BRACKETS = false
-DEDENT_CLOSING_BRACKETS = false
-DISABLE_ENDING_COMMA_HEURISTIC = false
-INDENT_DICTIONARY_VALUE = false
-ALLOW_SPLIT_BEFORE_DICT_VALUE = false
-SPLIT_ARGUMENTS_WHEN_COMMA_TERMINATED = true
+[tool.ty.environment]
+python = ".venv"
+python-version = "3.9"
+
+[tool.ty.terminal]
+error-on-warning = false

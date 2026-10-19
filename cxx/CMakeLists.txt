@@ -23,6 +23,10 @@ if (OPENMP_FOUND)
   target_link_libraries(${BUILD_TARGET} PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
+if (MSVC)
+  target_compile_definitions(${BUILD_TARGET} PRIVATE NOMINMAX _CRT_SECURE_NO_WARNINGS)
+endif()
+
 set_target_properties(${BUILD_TARGET} PROPERTIES
   INTERPROCEDURAL_OPTIMIZATION ON
   CXX_VISIBILITY_PRESET "hidden")

@@ -74,7 +74,7 @@ def visualize(V, F, C):
     """
 
     V = (V - (V.max(0) + V.min(0)) / 2) / max(V.max(0) - V.min(0))
-    MVP = (perspective(40, 1, 1, 100) @ translate(0, 0, -2.5) @ xrotate(0.0) @ yrotate(0.0))
+    MVP = perspective(40, 1, 1, 100) @ translate(0, 0, -2.5) @ xrotate(0.0) @ yrotate(0.0)
 
     V = np.c_[V, np.ones(len(V))] @ MVP.T
     V /= V[:, 3].reshape(-1, 1)
@@ -96,7 +96,7 @@ def visualize(V, F, C):
         frameon=False,
     )
 
-    collection = PolyCollection(T, closed=True, linewidth=0.1, facecolor=C, edgecolor="#00000033")
+    collection = PolyCollection(T, closed=True, linewidth=0.1, facecolor=C, edgecolor='#00000033')
     ax.add_collection(collection)
 
     plt.show()
@@ -105,19 +105,19 @@ def visualize(V, F, C):
 def main():
     # Arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("--gpu", type=int, default=0)
+    parser.add_argument('--gpu', type=int, default=0)
     args = parser.parse_args()
 
     # Grid data
     N = 128
-    xs = np.linspace(-1.0, 1.0, N, endpoint=True, dtype="float32")
-    ys = np.linspace(-1.0, 1.0, N, endpoint=True, dtype="float32")
-    zs = np.linspace(-1.0, 1.0, N, endpoint=True, dtype="float32")
+    xs = np.linspace(-1.0, 1.0, N, endpoint=True, dtype='float32')
+    ys = np.linspace(-1.0, 1.0, N, endpoint=True, dtype='float32')
+    zs = np.linspace(-1.0, 1.0, N, endpoint=True, dtype='float32')
     zs, ys, xs = np.meshgrid(zs, ys, xs)
 
     # Implicit function (metaball)
-    f0 = (xs - 0.35)**2 + (ys - 0.35)**2 + (zs - 0.35)**2
-    f1 = (xs + 0.35)**2 + (ys + 0.35)**2 + (zs + 0.35)**2
+    f0 = (xs - 0.35) ** 2 + (ys - 0.35) ** 2 + (zs - 0.35) ** 2
+    f1 = (xs + 0.35) ** 2 + (ys + 0.35) ** 2 + (zs + 0.35) ** 2
     u = 4.0 / (f0 + 1.0e-6) + 4.0 / (f1 + 1.0e-6)
 
     rgb = np.stack((xs, ys, zs), axis=-1) * 0.5 + 0.5
@@ -132,7 +132,7 @@ def main():
     verts, faces = marching_cubes(u, 15.0)
     colors = grid_interp(rgb, verts)
     t_end = time.time()
-    print(f"verts: {verts.size(0)}, faces: {faces.size(0)}, time: {t_end - t_start:.2f}s")
+    print(f'verts: {verts.size(0)}, faces: {faces.size(0)}, time: {t_end - t_start:.2f}s')
 
     verts = verts.numpy()
     faces = faces.numpy()
@@ -142,7 +142,7 @@ def main():
 
     # Test (GPU)
     if torch.cuda.is_available():
-        device = torch.device("cuda", args.gpu)
+        device = torch.device('cuda', args.gpu)
         u = u.to(device)
         rgb = rgb.to(device)
 
@@ -150,7 +150,7 @@ def main():
         verts, faces = marching_cubes(u, 15.0)
         colors = grid_interp(rgb, verts)
         t_end = time.time()
-        print(f"verts: {verts.size(0)}, faces: {faces.size(0)}, time: {t_end - t_start:.2f}s")
+        print(f'verts: {verts.size(0)}, faces: {faces.size(0)}, time: {t_end - t_start:.2f}s')
 
         verts = verts.detach().cpu().numpy()
         faces = faces.detach().cpu().numpy()
@@ -159,8 +159,8 @@ def main():
         visualize(verts, faces, colors)
 
     else:
-        print("CUDA is not available in this environment. Skip testing.")
+        print('CUDA is not available in this environment. Skip testing.')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

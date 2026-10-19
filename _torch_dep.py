@@ -1,4 +1,5 @@
-"""scikit-build-core dynamic-metadata provider for the torch runtime requirement.
+"""
+scikit-build-core dynamic-metadata provider for the torch runtime requirement.
 
 torchmcubes links against the C++ ABI of the PyTorch it is compiled with, so the
 built wheel must not claim to work with any torch version. This provider pins
@@ -16,22 +17,22 @@ import importlib.metadata
 
 def torch_requirement() -> str:
     try:
-        version = importlib.metadata.version("torch")
+        version = importlib.metadata.version('torch')
     except importlib.metadata.PackageNotFoundError:
         # Fail fast: without torch the build cannot succeed anyway (CMake needs
         # its config files), and emitting an unpinned requirement would produce
         # wrong metadata. Point the user at the documented install procedure.
         raise RuntimeError(
-            "torchmcubes must be built against an installed PyTorch, but the "
+            'torchmcubes must be built against an installed PyTorch, but the '
             "'torch' package was not found in the build environment. Install "
-            "torch first and build without isolation, e.g. "
-            "`pip install --no-build-isolation .` (see README)."
+            'torch first and build without isolation, e.g. '
+            '`pip install --no-build-isolation .` (see README).'
         ) from None
-    major, minor = version.split(".")[:2]
-    return f"torch=={major}.{minor}.*"
+    major, minor = version.split('.')[:2]
+    return f'torch=={major}.{minor}.*'
 
 
 class Provider:
     @staticmethod
     def dynamic_metadata(settings, project):
-        return {"dependencies": [torch_requirement()]}
+        return {'dependencies': [torch_requirement()]}

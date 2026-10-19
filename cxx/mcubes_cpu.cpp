@@ -459,7 +459,9 @@ void mcubes_method(torch::TensorAccessor<float, 3> vol, std::vector<XYZ> &vertic
 #ifdef _OPENMP
 #pragma omp critical
 #endif
-        { all_vertices.insert(all_vertices.end(), sub_vertices.begin(), sub_vertices.end()); }
+        {
+            all_vertices.insert(all_vertices.end(), sub_vertices.begin(), sub_vertices.end());
+        }
     }
 
     // Unique vertices

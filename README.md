@@ -13,7 +13,7 @@
 - C++20 compiler (GCC 10+, Clang 12+, or Visual Studio 2019 16.11+), required by recent PyTorch headers
 - CUDA Toolkit 12 or later (optional, only for GPU support; nvcc needs CUDA 12 for C++20)
   - Without a CUDA toolkit a CPU-only build is produced. CUDA tensors are then processed on the CPU with a warning. ROCm/HIP is not supported.
-- CMake (3.18 or later)
+- CMake (3.24 or later)
 
 Make sure that you have nvcc CUDA compiler with the following command.
 
@@ -44,6 +44,57 @@ pip install --no-build-isolation git+https://github.com/tatsy/torchmcubes.git
 ```
 
 To build from a local checkout, run `pip install --no-build-isolation .` in the repository root instead of the last command.
+
+### Development with uv
+
+The development environment pins PyTorch to 2.6.0. On Windows and Linux, uv
+installs the CUDA 12.4 build from the official PyTorch index; on macOS it uses
+PyPI. These development settings do not pin the PyTorch version used by pip
+users. Each built wheel records the minor series of the PyTorch used to build it.
+GPU development also requires a compatible CUDA toolkit and C++ compiler.
+
+An existing `.venv` can be reused. For a new checkout, create the environment first:
+
+```shell
+uv venv --python 3.9
+```
+
+Bootstrap only the locked development dependencies before installing the project.
+`--frozen` reads the committed lockfile without resolving the project's dynamic
+metadata. This makes the installed PyTorch and build tools available before
+the project is built with isolation disabled:
+
+```shell
+uv sync --frozen --only-group dev --inexact
+uv sync --locked --inexact
+```
+
+`--inexact` preserves packages already installed in a reused environment. Omit it
+to make the installed packages match the selected lockfile dependencies exactly.
+Commit `uv.lock` together with changes to the development dependencies.
+
+For subsequent development, sync, build, and check the installed package with:
+
+```shell
+uv sync --locked --inexact
+uv build
+uv run --no-sync python -I -c "import torchmcubes; print(torchmcubes.__file__, torchmcubes.__version__, torchmcubes.HAS_CUDA)"
+```
+
+`uv sync` installs the project in editable mode. `uv build` creates an sdist and
+a wheel in `dist/`; use `uv build --wheel` to build only a wheel. Building does
+not install the resulting wheel or run tests. To check the wheel itself, install
+its exact filename (which depends on the Python version and platform), then import it:
+
+```shell
+uv pip install --no-deps --reinstall-package torchmcubes dist/torchmcubes-0.1.0-cp39-cp39-win_amd64.whl
+uv run --no-sync python -I -c "import torchmcubes; print(torchmcubes.__file__, torchmcubes.__version__, torchmcubes.HAS_CUDA)"
+```
+
+Use `uv sync --locked --inexact --reinstall-package torchmcubes` to restore the
+editable installation afterward. When changing the development PyTorch version,
+update the `dev` dependency and its index as needed, run `uv pip install --group dev`
+to update the build environment, and then run `uv lock` and `uv sync`.
 
 ## Usage
 

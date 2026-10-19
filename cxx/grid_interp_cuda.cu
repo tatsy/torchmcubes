@@ -7,12 +7,10 @@
 #include "macros.h"
 #include "cuda_utils.h"
 
-__global__ void grid_interp_cuda_kernel(
-    const torch::PackedTensorAccessor32<float, 4, torch::RestrictPtrTraits> vol,
-    const torch::PackedTensorAccessor32<float, 2, torch::RestrictPtrTraits> points,
-    torch::PackedTensorAccessor32<float, 2, torch::RestrictPtrTraits> output,
-    int channels, int3 nGrids, size_t size) {
-
+__global__ void grid_interp_cuda_kernel(const torch::PackedTensorAccessor32<float, 4, torch::RestrictPtrTraits> vol,
+                                        const torch::PackedTensorAccessor32<float, 2, torch::RestrictPtrTraits> points,
+                                        torch::PackedTensorAccessor32<float, 2, torch::RestrictPtrTraits> output,
+                                        int channels, int3 nGrids, size_t size) {
     const int tx = blockIdx.x * blockDim.x + threadIdx.x;
     const int ty = blockIdx.y * blockDim.y + threadIdx.y;
     const int tz = blockIdx.z * blockDim.z + threadIdx.z;
@@ -72,8 +70,8 @@ torch::Tensor grid_interp_cuda(torch::Tensor vol, torch::Tensor points) {
     const int Np = points.size(0);
     const int deviceId = vol.device().index();
 
-    torch::Tensor output = torch::zeros({Np, C},
-        torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, deviceId));
+    torch::Tensor output =
+        torch::zeros({ Np, C }, torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, deviceId));
 
     auto volAscr = vol.packed_accessor32<float, 4, torch::RestrictPtrTraits>();
     auto ptsAscr = points.packed_accessor32<float, 2, torch::RestrictPtrTraits>();
